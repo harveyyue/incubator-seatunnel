@@ -107,13 +107,9 @@ public final class InternalRowConverter extends RowConverter<InternalRow> {
         MutableValue[] values = new MutableValue[arity];
         for (int i = 0; i < arity; i++) {
             values[i] = createMutableValue(rowType.getFieldType(i));
-            if (TypeConverterUtils.ROW_KIND_FIELD.equals(rowType.getFieldName(i))) {
-                values[i].update(seaTunnelRow.getRowKind().toByteValue());
-            } else {
-                Object fieldValue = convert(seaTunnelRow.getField(i), rowType.getFieldType(i));
-                if (fieldValue != null) {
-                    values[i].update(fieldValue);
-                }
+            Object fieldValue = convert(seaTunnelRow.getField(i), rowType.getFieldType(i));
+            if (fieldValue != null) {
+                values[i].update(fieldValue);
             }
         }
         return new SpecificInternalRow(values);
