@@ -19,6 +19,7 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * JDBC connection provider.
@@ -66,5 +67,15 @@ public interface JdbcConnectionProvider {
      * @throws ClassNotFoundException driver class not found
      */
     Connection reestablishConnection()
+            throws SQLException, ClassNotFoundException;
+
+    /**
+     * Execute SQLs without return.
+     *
+     * @param sqls sql statement list
+     * @throws SQLException sql exception
+     * @throws ClassNotFoundException driver class not found
+     */
+    void execute(List<String> sqls)
             throws SQLException, ClassNotFoundException;
 }

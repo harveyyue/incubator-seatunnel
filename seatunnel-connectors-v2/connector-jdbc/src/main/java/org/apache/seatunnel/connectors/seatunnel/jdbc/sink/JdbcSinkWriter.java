@@ -22,7 +22,6 @@ import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.config.JdbcSinkOptions;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.JdbcOutputFormat;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
-import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcStatementBuilder;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.SimpleBatchStatementExecutor;
@@ -45,9 +44,8 @@ public class JdbcSinkWriter implements SinkWriter<SeaTunnelRow, XidInfo, JdbcSin
     public JdbcSinkWriter(
         SinkWriter.Context context,
         JdbcStatementBuilder<SeaTunnelRow> statementBuilder,
-        JdbcSinkOptions jdbcSinkOptions) {
-
-        JdbcConnectionProvider connectionProvider = new SimpleJdbcConnectionProvider(jdbcSinkOptions.getJdbcConnectionOptions());
+        JdbcSinkOptions jdbcSinkOptions,
+        JdbcConnectionProvider connectionProvider) {
 
         this.context = context;
         this.outputFormat = new JdbcOutputFormat<>(

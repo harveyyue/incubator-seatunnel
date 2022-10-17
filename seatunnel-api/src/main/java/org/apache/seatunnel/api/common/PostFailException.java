@@ -17,28 +17,22 @@
 
 package org.apache.seatunnel.api.common;
 
+import org.apache.seatunnel.common.constants.PluginType;
+
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
 /**
- * This interface is the life cycle of a plugin, after a plugin created,
- * will execute prepare method to do some initialize operation.
+ * This exception will throw when {@link SeaTunnelPluginLifeCycle#post(Config)} failed.
  */
-public interface SeaTunnelPluginLifeCycle {
+public class PostFailException extends RuntimeException {
 
-    /**
-     * Use the pluginConfig to do some initialize operation.
-     *
-     * @param pluginConfig plugin config.
-     * @throws PrepareFailException if plugin prepare failed, the {@link PrepareFailException} will throw.
-     */
-    void prepare(Config pluginConfig) throws PrepareFailException;
+    public PostFailException(String pluginName, PluginType type, String message) {
+        super(String.format("PluginName: %s, PluginType: %s, Message: %s", pluginName, type.getType(),
+                message));
+    }
 
-    /**
-     * Use the pluginConfig to do some clean up operation.
-     *
-     * @param pluginConfig plugin config.
-     * @throws PostFailException if plugin post failed, the {@link PostFailException} will throw.
-     */
-    default void post(Config pluginConfig) throws PostFailException {}
-
+    public PostFailException(String pluginName, PluginType type, String message, Throwable cause) {
+        super(String.format("PluginName: %s, PluginType: %s, Message: %s", pluginName, type.getType(),
+                message), cause);
+    }
 }

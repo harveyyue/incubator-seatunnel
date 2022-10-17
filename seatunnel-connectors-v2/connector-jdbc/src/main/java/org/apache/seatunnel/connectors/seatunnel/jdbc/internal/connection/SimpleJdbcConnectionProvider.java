@@ -30,7 +30,9 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -153,5 +155,14 @@ public class SimpleJdbcConnectionProvider
         throws SQLException, ClassNotFoundException {
         closeConnection();
         return getOrEstablishConnection();
+    }
+
+    @Override
+    public void execute(List<String> sqls) throws SQLException, ClassNotFoundException {
+        try (Statement stmt = getOrEstablishConnection().createStatement()) {
+            for (String sql : sqls) {
+                stmt.execute(sql);
+            }
+        }
     }
 }

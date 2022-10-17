@@ -18,6 +18,7 @@
 package org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Optional;
 
 public class JdbcConnectionOptions
@@ -38,6 +39,8 @@ public class JdbcConnectionOptions
     public String username;
     public String password;
     public String query;
+    public List<String> prepareSql;
+    public List<String> postSql;
 
     public int batchSize = DEFAULT_BATCH_SIZE;
     public int batchIntervalMs = DEFAULT_BATCH_INTERVAL_MS;
@@ -87,6 +90,14 @@ public class JdbcConnectionOptions
         return batchIntervalMs;
     }
 
+    public List<String> getPrepareSql() {
+        return prepareSql;
+    }
+
+    public List<String> getPostSql() {
+        return postSql;
+    }
+
     public String getXaDataSourceClassName() {
         return xaDataSourceClassName;
     }
@@ -113,6 +124,8 @@ public class JdbcConnectionOptions
         private String query;
         private int batchSize = DEFAULT_BATCH_SIZE;
         private int batchIntervalMs = DEFAULT_BATCH_INTERVAL_MS;
+        public List<String> prepareSql;
+        public List<String> postSql;
         private String xaDataSourceClassName;
         private int maxCommitAttempts = DEFAULT_MAX_COMMIT_ATTEMPTS;
         private int transactionTimeoutSec = DEFAULT_TRANSACTION_TIMEOUT_SEC;
@@ -165,6 +178,16 @@ public class JdbcConnectionOptions
             return this;
         }
 
+        public JdbcConnectionOptionsBuilder withPrepareSql(List<String> prepareSql) {
+            this.prepareSql = prepareSql;
+            return this;
+        }
+
+        public JdbcConnectionOptionsBuilder withPostSql(List<String> postSql) {
+            this.postSql = postSql;
+            return this;
+        }
+
         public JdbcConnectionOptionsBuilder withXaDataSourceClassName(String xaDataSourceClassName) {
             this.xaDataSourceClassName = xaDataSourceClassName;
             return this;
@@ -189,6 +212,8 @@ public class JdbcConnectionOptions
             jdbcConnectionOptions.password = this.password;
             jdbcConnectionOptions.connectionCheckTimeoutSeconds = this.connectionCheckTimeoutSeconds;
             jdbcConnectionOptions.query = this.query;
+            jdbcConnectionOptions.prepareSql = this.prepareSql;
+            jdbcConnectionOptions.postSql = this.postSql;
             jdbcConnectionOptions.url = this.url;
             jdbcConnectionOptions.username = this.username;
             jdbcConnectionOptions.transactionTimeoutSec = this.transactionTimeoutSec;

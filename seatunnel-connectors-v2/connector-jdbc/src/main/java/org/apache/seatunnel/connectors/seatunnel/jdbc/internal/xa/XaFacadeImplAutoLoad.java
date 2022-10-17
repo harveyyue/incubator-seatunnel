@@ -49,6 +49,7 @@ import javax.transaction.xa.Xid;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -164,6 +165,15 @@ public class XaFacadeImplAutoLoad
     @Override
     public Connection reestablishConnection() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void execute(List<String> sqls) throws SQLException, ClassNotFoundException {
+        try (Statement stmt = getOrEstablishConnection().createStatement()) {
+            for (String sql : sqls) {
+                stmt.execute(sql);
+            }
+        }
     }
 
     @Override

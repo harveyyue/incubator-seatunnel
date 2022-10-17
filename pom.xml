@@ -166,7 +166,7 @@
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
         <commons-compress.version>1.20</commons-compress.version>
         <protostuff.version>1.8.0</protostuff.version>
-        <spark.scope>provided</spark.scope>
+        <spark.scope>compile</spark.scope>
         <flink.scope>provided</flink.scope>
         <codec.version>1.13</codec.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>

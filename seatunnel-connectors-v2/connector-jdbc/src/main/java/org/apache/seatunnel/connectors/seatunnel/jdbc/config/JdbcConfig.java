@@ -43,6 +43,10 @@ public class JdbcConfig implements Serializable {
 
     public static final String BATCH_INTERVAL_MS = "batch_interval_ms";
 
+    public static final String PREPARE_SQL = "pre_sql";
+
+    public static final String POST_SQL = "post_sql";
+
 
     public static final String IS_EXACTLY_ONCE = "is_exactly_once";
 
@@ -84,6 +88,12 @@ public class JdbcConfig implements Serializable {
         }
         if (config.hasPath(JdbcConfig.BATCH_INTERVAL_MS)) {
             jdbcOptions.batchIntervalMs = config.getInt(JdbcConfig.BATCH_INTERVAL_MS);
+        }
+        if (config.hasPath(JdbcConfig.PREPARE_SQL)) {
+            jdbcOptions.prepareSql = config.getStringList(JdbcConfig.PREPARE_SQL);
+        }
+        if (config.hasPath(JdbcConfig.POST_SQL)) {
+            jdbcOptions.postSql = config.getStringList(JdbcConfig.POST_SQL);
         }
 
         if (config.hasPath(JdbcConfig.IS_EXACTLY_ONCE)) {

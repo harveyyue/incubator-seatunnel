@@ -18,6 +18,7 @@
 package org.apache.seatunnel.connectors.seatunnel.jdbc.sink;
 
 import org.apache.seatunnel.api.common.JobContext;
+import org.apache.seatunnel.api.common.PostFailException;
 import org.apache.seatunnel.api.common.PrepareFailException;
 import org.apache.seatunnel.api.serialization.DefaultSerializer;
 import org.apache.seatunnel.api.serialization.Serializer;
@@ -27,7 +28,10 @@ import org.apache.seatunnel.api.sink.SinkWriter;
 import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
+import org.apache.seatunnel.common.constants.PluginType;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.config.JdbcSinkOptions;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcStatementBuilder;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcAggregatedCommitInfo;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcSinkState;
@@ -37,8 +41,11 @@ import org.apache.seatunnel.connectors.seatunnel.jdbc.utils.JdbcUtils;
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
 import com.google.auto.service.AutoService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +54,8 @@ import java.util.Optional;
 public class JdbcSink
     implements SeaTunnelSink<SeaTunnelRow, JdbcSinkState, XidInfo, JdbcAggregatedCommitInfo> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(JdbcSink.class);
+
     private Config pluginConfig;
 
     private SeaTunnelRowType seaTunnelRowType;
@@ -54,6 +63,12 @@ public class JdbcSink
     private JobContext jobContext;
 
     private JdbcSinkOptions jdbcSinkOptions;
+
+    private JdbcConnectionProvider connectionProvider;
+
+    private List<String> preSqls;
+
+    private List<String> postSqls;
 
     @Override
     public String getPluginName() {
@@ -65,6 +80,30 @@ public class JdbcSink
         throws PrepareFailException {
         this.pluginConfig = pluginConfig;
         this.jdbcSinkOptions = new JdbcSinkOptions(this.pluginConfig);
+        this.connectionProvider = new SimpleJdbcConnectionProvider(jdbcSinkOptions.getJdbcConnectionOptions());
+        this.preSqls = jdbcSinkOptions.getJdbcConnectionOptions().getPrepareSql();
+        this.postSqls = jdbcSinkOptions.getJdbcConnectionOptions().getPostSql();
+        if (this.preSqls != null && this.preSqls.size() > 0) {
+            LOG.info("Execute prepare sqls: {}", this.preSqls);
+            try {
+                connectionProvider.execute(preSqls);
+            } catch (SQLException | ClassNotFoundException ex) {
+                throw new PrepareFailException(getPluginName(), PluginType.SINK, ex.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void post(Config pluginConfig)
+        throws PostFailException {
+        if (this.postSqls != null && this.postSqls.size() > 0) {
+            LOG.info("Execute post sqls: {}", this.postSqls);
+            try {
+                connectionProvider.execute(postSqls);
+            } catch (SQLException | ClassNotFoundException ex) {
+                throw new PostFailException(getPluginName(), PluginType.SINK, ex.getMessage());
+            }
+        }
     }
 
     @Override
@@ -85,7 +124,8 @@ public class JdbcSink
             sinkWriter = new JdbcSinkWriter(
                 context,
                 statementBuilder,
-                jdbcSinkOptions);
+                jdbcSinkOptions,
+                connectionProvider);
         }
 
         return sinkWriter;
