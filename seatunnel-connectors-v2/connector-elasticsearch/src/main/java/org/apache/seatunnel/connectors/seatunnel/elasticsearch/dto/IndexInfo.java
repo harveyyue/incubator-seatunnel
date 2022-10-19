@@ -19,6 +19,8 @@ package org.apache.seatunnel.connectors.seatunnel.elasticsearch.dto;
 
 import org.apache.seatunnel.connectors.seatunnel.elasticsearch.config.SinkConfig;
 
+import java.util.List;
+
 /**
  * index config by seatunnel
  */
@@ -26,11 +28,15 @@ public class IndexInfo {
 
     private String index;
     private String type;
+    private List<String> ids;
 
     public IndexInfo(org.apache.seatunnel.shade.com.typesafe.config.Config pluginConfig) {
         index = pluginConfig.getString(SinkConfig.INDEX);
         if (pluginConfig.hasPath(SinkConfig.INDEX_TYPE)) {
             type = pluginConfig.getString(SinkConfig.INDEX_TYPE);
+        }
+        if (pluginConfig.hasPath(SinkConfig.INDEX_ID)) {
+            ids = pluginConfig.getStringList(SinkConfig.INDEX_ID);
         }
     }
 
@@ -50,4 +56,11 @@ public class IndexInfo {
         this.type = type;
     }
 
+    public List<String> getIds() {
+        return ids;
+    }
+
+    public void setIds(List<String> ids) {
+        this.ids = ids;
+    }
 }

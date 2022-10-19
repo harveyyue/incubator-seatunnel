@@ -25,6 +25,8 @@ public class SinkConfig {
 
     public static final String INDEX_TYPE = "index_type";
 
+    public static final String INDEX_ID = "index_id";
+
     public static final String USERNAME = "username";
 
     public static final String PASSWORD = "password";

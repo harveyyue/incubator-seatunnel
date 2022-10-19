@@ -17,6 +17,13 @@
 
 package org.apache.seatunnel.connectors.seatunnel.elasticsearch.serialize;
 
+import org.apache.seatunnel.api.table.type.ArrayType;
+import org.apache.seatunnel.api.table.type.BasicType;
+import org.apache.seatunnel.api.table.type.DecimalType;
+import org.apache.seatunnel.api.table.type.LocalTimeType;
+import org.apache.seatunnel.api.table.type.MapType;
+import org.apache.seatunnel.api.table.type.PrimitiveByteArrayType;
+import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
 import org.apache.seatunnel.connectors.seatunnel.elasticsearch.constant.ElasticsearchVersion;
@@ -31,34 +38,46 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * use in elasticsearch version >= 7.*
  */
 public class ElasticsearchRowSerializer implements SeaTunnelRowSerializer {
-    private final SeaTunnelRowType seaTunnelRowType;
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule())
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
+    private final SeaTunnelRowType seaTunnelRowType;
+    private final IndexInfo indexInfo;
     private final IndexSerializer indexSerializer;
-
     private final IndexTypeSerializer indexTypeSerializer;
+    private boolean hasKeys;
 
     public ElasticsearchRowSerializer(ElasticsearchVersion elasticsearchVersion, IndexInfo indexInfo, SeaTunnelRowType seaTunnelRowType) {
         this.indexTypeSerializer = IndexTypeSerializerFactory.getIndexTypeSerializer(elasticsearchVersion, indexInfo.getType());
         this.indexSerializer = IndexSerializerFactory.getIndexSerializer(indexInfo.getIndex(), seaTunnelRowType);
         this.seaTunnelRowType = seaTunnelRowType;
+        this.indexInfo = indexInfo;
+        this.hasKeys = indexInfo.getIds() != null && indexInfo.getIds().size() > 0 ? true : false;
     }
 
     @Override
-    public String serializeRow(SeaTunnelRow row){
+    public String serializeRow(SeaTunnelRow row) {
         String[] fieldNames = seaTunnelRowType.getFieldNames();
         Map<String, Object> doc = new HashMap<>(fieldNames.length);
         Object[] fields = row.getFields();
+        List<String> keys = new ArrayList<>();
         for (int i = 0; i < fieldNames.length; i++) {
-            doc.put(fieldNames[i], fields[i]);
+            String fieldName = fieldNames[i];
+            Object fieldValue = fields[i];
+            doc.put(fieldName, fieldValue);
+            if (hasKeys && indexInfo.getIds().stream().filter(f -> f.equalsIgnoreCase(fieldName)).count() > 0) {
+                keys.add(convertKey(seaTunnelRowType.getFieldType(i), fieldValue));
+            }
         }
 
         StringBuilder sb = new StringBuilder();
@@ -66,6 +85,9 @@ public class ElasticsearchRowSerializer implements SeaTunnelRowSerializer {
         Map<String, String> indexInner = new HashMap<>();
         String index = indexSerializer.serialize(row);
         indexInner.put("_index", index);
+        if (hasKeys && keys.size() > 0) {
+            indexInner.put("_id", keys.stream().collect(Collectors.joining("+")));
+        }
         indexTypeSerializer.fillType(indexInner);
 
         Map<String, Map<String, String>> indexParam = new HashMap<>();
@@ -80,5 +102,29 @@ public class ElasticsearchRowSerializer implements SeaTunnelRowSerializer {
         }
 
         return sb.toString();
+    }
+
+    private String convertKey(SeaTunnelDataType<?> dataType, Object value) {
+        if (dataType instanceof BasicType
+                || dataType instanceof DecimalType
+                || dataType instanceof PrimitiveByteArrayType
+                || dataType instanceof LocalTimeType) {
+            return String.valueOf(value);
+        } else if (dataType instanceof MapType) {
+            Map<Object, Object> result = (Map<Object, Object>) value;
+            return result.values().stream().map(String::valueOf).collect(Collectors.joining("+"));
+        } else if (dataType instanceof ArrayType) {
+            return ((List<Object>) value).stream().map(String::valueOf).collect(Collectors.joining("+"));
+        } else if (dataType instanceof SeaTunnelRowType) {
+            List<String> list = new ArrayList<>();
+            SeaTunnelRowType seaTunnelRowType = (SeaTunnelRowType) dataType;
+            Object[] fields = ((SeaTunnelRow) value).getFields();
+            for (int i = 0; i < seaTunnelRowType.getFieldNames().length; i++) {
+                list.add(convertKey(seaTunnelRowType.getFieldType(i), fields[i]));
+            }
+            return list.stream().collect(Collectors.joining("+"));
+        } else {
+            throw new IllegalArgumentException("Not supported data type: " + dataType);
+        }
     }
 }
