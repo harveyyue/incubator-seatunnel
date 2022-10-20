@@ -17,7 +17,13 @@
 
 package org.apache.seatunnel.common.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+
 public class RetryUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(RetryUtils.class);
 
     /**
      * Execute the given execution with retry
@@ -46,11 +52,19 @@ public class RetryUtils {
                     if (retryMaterial.shouldThrowException()) {
                         throw e;
                     }
-                } else if (retryMaterial.getSleepTimeMillis() > 0) {
-                    Thread.sleep(retryMaterial.getSleepTimeMillis());
+                } else {
+                    // Otherwise it is retriable and we should retry
+                    String attemptMessage = "Failed to execute due to {}. Retrying attempt ({}/{}) after backoff of {} ms";
+                    if (retryMaterial.getSleepTimeMillis() > 0) {
+                        long backoff = retryMaterial.computeRetryWaitTimeMillis(i);
+                        LOG.warn(attemptMessage, e.getCause(), i, retryTimes, backoff);
+                        Thread.sleep(backoff);
+                    } else {
+                        LOG.warn(attemptMessage, e.getCause(), i, retryTimes, 0);
+                    }
                 }
             }
-        } while (i <= retryTimes);
+        } while (i < retryTimes);
         if (retryMaterial.shouldThrowException()) {
             throw new RuntimeException("Execute given execution failed after retry " + retryTimes + " times", lastException);
         }
@@ -58,6 +72,16 @@ public class RetryUtils {
     }
 
     public static class RetryMaterial {
+        /**
+         * An arbitrary absolute maximum practical retry time.
+         */
+        public static final long MAX_RETRY_TIME_MS = TimeUnit.HOURS.toMillis(1);
+
+        /**
+         * The maximum retry time.
+         */
+        public static final long MAX_RETRY_TIME = 32;
+
         /**
          * Retry times, if you set it to 1, the given execution will be executed twice.
          * Should be greater than 0.
@@ -101,6 +125,18 @@ public class RetryUtils {
 
         public long getSleepTimeMillis() {
             return sleepTimeMillis;
+        }
+
+        public long computeRetryWaitTimeMillis(int retryAttempts) {
+            if (sleepTimeMillis < 0) {
+                return 0;
+            }
+            if (retryAttempts > MAX_RETRY_TIME) {
+                // This would overflow the exponential algorithm ...
+                return MAX_RETRY_TIME_MS;
+            }
+            long result = sleepTimeMillis << retryAttempts;
+            return result < 0L ? MAX_RETRY_TIME_MS : Math.min(MAX_RETRY_TIME_MS, result);
         }
     }
 

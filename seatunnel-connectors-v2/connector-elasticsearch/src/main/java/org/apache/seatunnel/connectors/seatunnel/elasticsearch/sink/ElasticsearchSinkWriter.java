@@ -20,6 +20,8 @@ package org.apache.seatunnel.connectors.seatunnel.elasticsearch.sink;
 import org.apache.seatunnel.api.sink.SinkWriter;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
+import org.apache.seatunnel.common.utils.RetryUtils;
+import org.apache.seatunnel.common.utils.RetryUtils.RetryMaterial;
 import org.apache.seatunnel.connectors.seatunnel.elasticsearch.client.EsRestClient;
 import org.apache.seatunnel.connectors.seatunnel.elasticsearch.config.SinkConfig;
 import org.apache.seatunnel.connectors.seatunnel.elasticsearch.constant.BulkConfig;
@@ -51,6 +53,8 @@ public class ElasticsearchSinkWriter<ElasticsearchSinkStateT> implements SinkWri
     private final SeaTunnelRowSerializer seaTunnelRowSerializer;
     private final List<String> requestEsList;
     private EsRestClient esRestClient;
+    private RetryMaterial retryMaterial;
+    private static final long DEFAULT_SLEEP_TIME_MS = 200L;
 
     public ElasticsearchSinkWriter(
             SinkWriter.Context context,
@@ -65,6 +69,8 @@ public class ElasticsearchSinkWriter<ElasticsearchSinkStateT> implements SinkWri
         this.seaTunnelRowSerializer = new ElasticsearchRowSerializer(elasticsearchVersion, indexInfo, seaTunnelRowType);
 
         this.requestEsList = new ArrayList<>(BulkConfig.MAX_BATCH_SIZE);
+        this.retryMaterial = new RetryMaterial(BulkConfig.MAX_RETRY_SIZE, true,
+            exception -> true, DEFAULT_SLEEP_TIME_MS);
     }
 
     private void initRestClient(org.apache.seatunnel.shade.com.typesafe.config.Config pluginConfig) {
@@ -85,7 +91,7 @@ public class ElasticsearchSinkWriter<ElasticsearchSinkStateT> implements SinkWri
         String indexRequestRow = seaTunnelRowSerializer.serializeRow(element);
         requestEsList.add(indexRequestRow);
         if (requestEsList.size() >= BulkConfig.MAX_BATCH_SIZE) {
-            bulkEsWithRetry(this.esRestClient, this.requestEsList, BulkConfig.MAX_RETRY_SIZE);
+            bulkEsWithRetry(this.esRestClient, this.requestEsList);
             requestEsList.clear();
         }
     }
@@ -99,29 +105,27 @@ public class ElasticsearchSinkWriter<ElasticsearchSinkStateT> implements SinkWri
     public void abortPrepare() {
     }
 
-    public void bulkEsWithRetry(EsRestClient esRestClient, List<String> requestEsList, int maxRetry) {
-        for (int tryCnt = 1; tryCnt <= maxRetry; tryCnt++) {
-            if (requestEsList.size() > 0) {
-                String requestBody = String.join("\n", requestEsList) + "\n";
-                try {
+    public void bulkEsWithRetry(EsRestClient esRestClient, List<String> requestEsList) {
+        try {
+            RetryUtils.retryWithException(() -> {
+                if (requestEsList.size() > 0) {
+                    String requestBody = String.join("\n", requestEsList) + "\n";
                     BulkResponse bulkResponse = esRestClient.bulk(requestBody);
-                    if (!bulkResponse.isErrors()) {
-                        break;
+                    if (bulkResponse.isErrors()) {
+                        throw new BulkElasticsearchException("bulk es error: " + bulkResponse.getResponse());
                     }
-                } catch (Exception ex) {
-                    if (tryCnt == maxRetry) {
-                        throw new BulkElasticsearchException("bulk es error,try count=%d", ex);
-                    }
-                    log.warn(String.format("bulk es error,try count=%d", tryCnt), ex);
+                    return bulkResponse;
                 }
-
-            }
+                return null;
+            }, retryMaterial);
+        } catch (Exception e) {
+            throw new RuntimeException("ElasticSearch execute batch statement error", e);
         }
     }
 
     @Override
     public void close() throws IOException {
-        bulkEsWithRetry(this.esRestClient, this.requestEsList, BulkConfig.MAX_RETRY_SIZE);
+        bulkEsWithRetry(this.esRestClient, this.requestEsList);
         esRestClient.close();
     }
 }
