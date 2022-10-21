@@ -37,12 +37,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * use in elasticsearch version >= 7.*
@@ -62,7 +64,7 @@ public class ElasticsearchRowSerializer implements SeaTunnelRowSerializer {
         this.indexSerializer = IndexSerializerFactory.getIndexSerializer(indexInfo.getIndex(), seaTunnelRowType);
         this.seaTunnelRowType = seaTunnelRowType;
         this.indexInfo = indexInfo;
-        this.hasKeys = indexInfo.getIds() != null && indexInfo.getIds().size() > 0 ? true : false;
+        this.hasKeys = CollectionUtils.isNotEmpty(indexInfo.getIds());
     }
 
     @Override
@@ -114,7 +116,7 @@ public class ElasticsearchRowSerializer implements SeaTunnelRowSerializer {
             Map<Object, Object> result = (Map<Object, Object>) value;
             return result.values().stream().map(String::valueOf).collect(Collectors.joining("+"));
         } else if (dataType instanceof ArrayType) {
-            return ((List<Object>) value).stream().map(String::valueOf).collect(Collectors.joining("+"));
+            return Stream.of((Object[]) value).map(String::valueOf).collect(Collectors.joining("+"));
         } else if (dataType instanceof SeaTunnelRowType) {
             List<String> list = new ArrayList<>();
             SeaTunnelRowType seaTunnelRowType = (SeaTunnelRowType) dataType;
