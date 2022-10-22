@@ -17,13 +17,12 @@
 
 package org.apache.seatunnel.common.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class RetryUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(RetryUtils.class);
 
     /**
      * Execute the given execution with retry
@@ -57,16 +56,16 @@ public class RetryUtils {
                     String attemptMessage = "Failed to execute due to {}. Retrying attempt ({}/{}) after backoff of {} ms";
                     if (retryMaterial.getSleepTimeMillis() > 0) {
                         long backoff = retryMaterial.computeRetryWaitTimeMillis(i);
-                        LOG.warn(attemptMessage, e.getCause(), i, retryTimes, backoff);
+                        log.warn(attemptMessage, e.getCause(), i, retryTimes, backoff);
                         Thread.sleep(backoff);
                     } else {
-                        LOG.warn(attemptMessage, e.getCause(), i, retryTimes, 0);
+                        log.warn(attemptMessage, e.getCause(), i, retryTimes, 0);
                     }
                 }
             }
         } while (i < retryTimes);
         if (retryMaterial.shouldThrowException()) {
-            throw new RuntimeException("Execute given execution failed after retry " + retryTimes + " times", lastException);
+            throw new SeaTunnelException("Execute given execution failed after retry " + retryTimes + " times", lastException);
         }
         return null;
     }
