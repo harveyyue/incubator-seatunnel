@@ -25,6 +25,7 @@ import static org.apache.seatunnel.connectors.seatunnel.kafka.config.Config.TOPI
 import static org.apache.seatunnel.connectors.seatunnel.kafka.config.Config.TRANSACTION_PREFIX;
 
 import org.apache.seatunnel.api.sink.SinkWriter;
+import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
 import org.apache.seatunnel.common.config.TypesafeConfigUtils;
@@ -36,6 +37,8 @@ import org.apache.seatunnel.connectors.seatunnel.kafka.state.KafkaSinkState;
 
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -46,19 +49,23 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * KafkaSinkWriter is a sink writer that will write {@link SeaTunnelRow} to Kafka.
  */
+@Slf4j
 public class KafkaSinkWriter implements SinkWriter<SeaTunnelRow, KafkaCommitInfo, KafkaSinkState> {
 
     private final SinkWriter.Context context;
     private final Config pluginConfig;
-    private final Function<SeaTunnelRow, String> partitionExtractor;
+    private final Function<SeaTunnelRow, SeaTunnelRow> partitionExtractor;
 
     private String transactionPrefix;
     private long lastCheckpointId = 0;
     private int partition;
+    private String topic;
+    private List<String> partitionKeys;
 
     private final KafkaProduceSender<byte[], byte[]> kafkaProducerSender;
     private final SeaTunnelRowSerializer<byte[], byte[]> seaTunnelRowSerializer;
@@ -69,12 +76,11 @@ public class KafkaSinkWriter implements SinkWriter<SeaTunnelRow, KafkaCommitInfo
     @Override
     public void write(SeaTunnelRow element) {
         ProducerRecord<byte[], byte[]> producerRecord;
-        //Determine the partition of the kafka send message based on the field name
-        if (pluginConfig.hasPath(PARTITION_KEY)){
-            String key = partitionExtractor.apply(element);
-            producerRecord = seaTunnelRowSerializer.serializeRowByKey(key, element);
-        }
-        else {
+        // Determine the partition of the kafka send message based on the field name
+        if (pluginConfig.hasPath(PARTITION_KEY)) {
+            SeaTunnelRow keyElement = partitionExtractor.apply(element);
+            producerRecord = seaTunnelRowSerializer.serializeRowByKey(keyElement, element);
+        } else {
             producerRecord = seaTunnelRowSerializer.serializeRow(element);
         }
         kafkaProducerSender.send(producerRecord);
@@ -87,7 +93,9 @@ public class KafkaSinkWriter implements SinkWriter<SeaTunnelRow, KafkaCommitInfo
             List<KafkaSinkState> kafkaStates) {
         this.context = context;
         this.pluginConfig = pluginConfig;
-        this.partitionExtractor = createPartitionExtractor(pluginConfig, seaTunnelRowType);
+        this.topic = pluginConfig.getString(TOPIC);
+        this.partitionKeys = createPartitionKeys(pluginConfig, seaTunnelRowType);
+        this.partitionExtractor = createPartitionExtractor(seaTunnelRowType);
         if (pluginConfig.hasPath(PARTITION)) {
             this.partition = pluginConfig.getInt(PARTITION);
         }
@@ -160,11 +168,24 @@ public class KafkaSinkWriter implements SinkWriter<SeaTunnelRow, KafkaCommitInfo
 
     // todo: parse the target field from config
     private SeaTunnelRowSerializer<byte[], byte[]> getSerializer(Config pluginConfig, SeaTunnelRowType seaTunnelRowType) {
-        if (pluginConfig.hasPath(PARTITION)){
-            return new DefaultSeaTunnelRowSerializer(pluginConfig.getString(TOPIC), this.partition, seaTunnelRowType);
-        }
-        else {
-            return new DefaultSeaTunnelRowSerializer(pluginConfig.getString(TOPIC), seaTunnelRowType);
+        if (pluginConfig.hasPath(PARTITION)) {
+            return new DefaultSeaTunnelRowSerializer(this.topic, this.partition, seaTunnelRowType);
+        } else if (CollectionUtils.isNotEmpty(this.partitionKeys)) {
+            int size = this.partitionKeys.size();
+            String[] keyFieldNames = new String[size];
+            SeaTunnelDataType<?>[] keyFieldTypes = new SeaTunnelDataType[size];
+            int index = 0;
+            for (int i = 0; i < seaTunnelRowType.getFieldNames().length; i++) {
+                if (this.partitionKeys.contains(seaTunnelRowType.getFieldNames()[i])) {
+                    keyFieldNames[index] = seaTunnelRowType.getFieldName(i);
+                    keyFieldTypes[index] = seaTunnelRowType.getFieldType(i);
+                    ++index;
+                }
+            }
+            SeaTunnelRowType keySeaTunnelRowType = new SeaTunnelRowType(keyFieldNames, keyFieldTypes);
+            return new DefaultSeaTunnelRowSerializer(this.topic, keySeaTunnelRowType, seaTunnelRowType);
+        } else {
+            return new DefaultSeaTunnelRowSerializer(this.topic, seaTunnelRowType);
         }
     }
 
@@ -186,23 +207,39 @@ public class KafkaSinkWriter implements SinkWriter<SeaTunnelRow, KafkaCommitInfo
         }
     }
 
-    private Function<SeaTunnelRow, String> createPartitionExtractor(Config pluginConfig,
-                                                                    SeaTunnelRowType seaTunnelRowType) {
-        if (!pluginConfig.hasPath(PARTITION_KEY)) {
+    private Function<SeaTunnelRow, SeaTunnelRow> createPartitionExtractor(SeaTunnelRowType seaTunnelRowType) {
+        if (CollectionUtils.isEmpty(this.partitionKeys)) {
             return row -> null;
         }
-        String partitionKey = pluginConfig.getString(PARTITION_KEY);
-        List<String> fieldNames = Arrays.asList(seaTunnelRowType.getFieldNames());
-        if (!fieldNames.contains(partitionKey)) {
-            return row -> partitionKey;
-        }
-        int partitionFieldIndex = seaTunnelRowType.indexOf(partitionKey);
         return row -> {
-            Object partitionFieldValue = row.getField(partitionFieldIndex);
-            if (partitionFieldValue != null) {
-                return partitionFieldValue.toString();
+            SeaTunnelRow keySeaTunnelRow = new SeaTunnelRow(this.partitionKeys.size());
+            int index = 0;
+            for (int i = 0; i < seaTunnelRowType.getFieldNames().length; i++) {
+                String fieldName = seaTunnelRowType.getFieldNames()[i];
+                if (this.partitionKeys.contains(fieldName)) {
+                    int partitionFieldIndex = seaTunnelRowType.indexOf(fieldName);
+                    Object partitionFieldValue = row.getField(partitionFieldIndex);
+                    keySeaTunnelRow.setField(index, partitionFieldValue);
+                    ++index;
+                }
             }
-            return null;
+            return keySeaTunnelRow;
         };
+    }
+
+    private List<String> createPartitionKeys(Config pluginConfig, SeaTunnelRowType seaTunnelRowType) {
+        if (pluginConfig.hasPath(PARTITION_KEY)) {
+            return pluginConfig.getStringList(PARTITION_KEY).stream()
+                    .filter(f -> {
+                        if (Arrays.asList(seaTunnelRowType.getFieldNames()).contains(f)) {
+                            return true;
+                        } else {
+                            log.warn("Not found partition key field: {}", f);
+                            return false;
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
+        return null;
     }
 }
