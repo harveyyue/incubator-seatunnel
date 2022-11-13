@@ -32,10 +32,12 @@ public class SeatunnelPartitionReaderFactory implements PartitionReaderFactory {
 
     private final SeaTunnelSource<SeaTunnelRow, ?, ?> source;
     private final Integer parallelism;
+    private final Integer recordSpeed;
 
-    public SeatunnelPartitionReaderFactory(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism) {
+    public SeatunnelPartitionReaderFactory(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
+        this.recordSpeed = recordSpeed;
     }
 
     @Override
@@ -44,9 +46,9 @@ public class SeatunnelPartitionReaderFactory implements PartitionReaderFactory {
         Integer subTaskId = seatunnelInputPartition.getSubtaskId();
         ParallelBatchPartitionReader partitionReader;
         if (source instanceof SupportCoordinate) {
-            partitionReader = new CoordinatedBatchPartitionReader(source, parallelism, subTaskId);
+            partitionReader = new CoordinatedBatchPartitionReader(source, parallelism, subTaskId, recordSpeed);
         } else {
-            partitionReader = new ParallelBatchPartitionReader(source, parallelism, subTaskId);
+            partitionReader = new ParallelBatchPartitionReader(source, parallelism, subTaskId, recordSpeed);
         }
         return new SeatunnelPartitionReader(partitionReader);
     }

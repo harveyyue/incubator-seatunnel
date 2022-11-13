@@ -155,6 +155,12 @@
                             <exclude>org.apache.seatunnel:seatunnel-hadoop3-3.1.4-uber</exclude>
                         </excludes>
                     </artifactSet>
+                    <relocations>
+                        <relocation>
+                            <pattern>com.google.common</pattern>
+                            <shadedPattern>org.apache.seatunnel.shaded.com.google.common</shadedPattern>
+                        </relocation>
+                    </relocations>
                 </configuration>
             </plugin>
         </plugins>

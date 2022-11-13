@@ -59,7 +59,8 @@ public class SeatunnelTable implements Table, SupportsRead, SupportsWrite {
         }
         SeaTunnelSource<SeaTunnelRow, ?, ?> seaTunnelSource = SerializationUtils.stringToObject(source);
         int parallelism = Integer.parseInt(options.getOrDefault(CollectionConstants.PARALLELISM, "1"));
-        return new SeatunnelScanBuilder(seaTunnelSource, parallelism);
+        int recordSpeed = Integer.parseInt(options.getOrDefault(CollectionConstants.RECORD_SPEED, "-1"));
+        return new SeatunnelScanBuilder(seaTunnelSource, parallelism, recordSpeed);
     }
 
     @Override

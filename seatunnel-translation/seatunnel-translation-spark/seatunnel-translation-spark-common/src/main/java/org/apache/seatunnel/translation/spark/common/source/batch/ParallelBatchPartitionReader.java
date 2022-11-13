@@ -26,6 +26,7 @@ import org.apache.seatunnel.translation.source.ParallelSource;
 import org.apache.seatunnel.translation.spark.common.InternalRowCollector;
 import org.apache.seatunnel.translation.util.ThreadPoolExecutorFactory;
 
+import com.google.common.util.concurrent.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.spark.sql.catalyst.InternalRow;
 
@@ -55,12 +56,24 @@ public class ParallelBatchPartitionReader {
     protected volatile BaseSourceFunction<SeaTunnelRow> internalSource;
     protected volatile InternalRowCollector internalRowCollector;
 
-    public ParallelBatchPartitionReader(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer subtaskId) {
+    protected final boolean isRecordLimit;
+    protected RateLimiter rateLimiter;
+
+    public ParallelBatchPartitionReader(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer subtaskId, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
         this.subtaskId = subtaskId;
         this.executorService = ThreadPoolExecutorFactory.createScheduledThreadPoolExecutor(1, getEnumeratorThreadName());
         this.handover = new Handover<>();
+        this.isRecordLimit = recordSpeed > 0 ? true : false;
+        if (isRecordLimit) {
+            log.info("Enable record limit, reading source with {} per second limit", recordSpeed);
+            this.rateLimiter = RateLimiter.create(recordSpeed);
+        }
+    }
+
+    public ParallelBatchPartitionReader(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer subtaskId) {
+        this(source, parallelism, subtaskId, -1);
     }
 
     protected String getEnumeratorThreadName() {
@@ -114,6 +127,9 @@ public class ParallelBatchPartitionReader {
 
     public InternalRow get() {
         try {
+            if (isRecordLimit) {
+                rateLimiter.acquire();
+            }
             return handover.pollNext().get();
         } catch (Exception e) {
             throw new RuntimeException(e);

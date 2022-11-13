@@ -21,6 +21,7 @@ import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.api.source.SourceCommonOptions;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.common.Constants;
+import org.apache.seatunnel.common.constants.CollectionConstants;
 import org.apache.seatunnel.common.utils.SerializationUtils;
 import org.apache.seatunnel.translation.spark.source.batch.BatchSourceReader;
 import org.apache.seatunnel.translation.spark.source.micro.MicroBatchSourceReader;
@@ -61,7 +62,8 @@ public class SeaTunnelSourceSupport implements DataSourceV2, ReadSupport, MicroB
     public DataSourceReader createReader(DataSourceOptions options) {
         SeaTunnelSource<SeaTunnelRow, ?, ?> seaTunnelSource = getSeaTunnelSource(options);
         int parallelism = options.getInt(SourceCommonOptions.PARALLELISM.key(), 1);
-        return new BatchSourceReader(seaTunnelSource, parallelism);
+        int recordSpeed = options.getInt(CollectionConstants.RECORD_SPEED, -1);
+        return new BatchSourceReader(seaTunnelSource, parallelism, recordSpeed);
     }
 
     @Override

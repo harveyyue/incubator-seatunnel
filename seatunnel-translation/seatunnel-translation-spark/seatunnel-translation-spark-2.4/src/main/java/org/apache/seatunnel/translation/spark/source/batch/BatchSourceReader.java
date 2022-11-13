@@ -34,10 +34,12 @@ public class BatchSourceReader implements DataSourceReader {
 
     protected final SeaTunnelSource<SeaTunnelRow, ?, ?> source;
     protected final Integer parallelism;
+    protected final Integer recordSpeed;
 
-    public BatchSourceReader(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism) {
+    public BatchSourceReader(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
+        this.recordSpeed = recordSpeed;
     }
 
     @Override
@@ -50,11 +52,11 @@ public class BatchSourceReader implements DataSourceReader {
         List<InputPartition<InternalRow>> virtualPartitions;
         if (source instanceof SupportCoordinate) {
             virtualPartitions = new ArrayList<>(1);
-            virtualPartitions.add(new BatchPartition(source, parallelism, 0));
+            virtualPartitions.add(new BatchPartition(source, parallelism, 0, recordSpeed));
         } else {
             virtualPartitions = new ArrayList<>(parallelism);
             for (int subtaskId = 0; subtaskId < parallelism; subtaskId++) {
-                virtualPartitions.add(new BatchPartition(source, parallelism, subtaskId));
+                virtualPartitions.add(new BatchPartition(source, parallelism, subtaskId, recordSpeed));
             }
         }
         return virtualPartitions;

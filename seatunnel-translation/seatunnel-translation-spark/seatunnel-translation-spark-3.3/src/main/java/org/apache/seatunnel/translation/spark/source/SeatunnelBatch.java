@@ -29,10 +29,12 @@ public class SeatunnelBatch implements Batch {
 
     private final SeaTunnelSource<SeaTunnelRow, ?, ?> source;
     private final Integer parallelism;
+    private final Integer recordSpeed;
 
-    public SeatunnelBatch(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism) {
+    public SeatunnelBatch(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
+        this.recordSpeed = recordSpeed;
     }
 
     @Override
@@ -52,6 +54,6 @@ public class SeatunnelBatch implements Batch {
 
     @Override
     public PartitionReaderFactory createReaderFactory() {
-        return new SeatunnelPartitionReaderFactory(source, parallelism);
+        return new SeatunnelPartitionReaderFactory(source, parallelism, recordSpeed);
     }
 }

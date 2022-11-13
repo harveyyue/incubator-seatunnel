@@ -27,14 +27,16 @@ public class SeatunnelScanBuilder implements ScanBuilder {
 
     private final SeaTunnelSource<SeaTunnelRow, ?, ?> source;
     private final Integer parallelism;
+    private final Integer recordSpeed;
 
-    public SeatunnelScanBuilder(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism) {
+    public SeatunnelScanBuilder(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
+        this.recordSpeed = recordSpeed;
     }
 
     @Override
     public Scan build() {
-        return new SeatunnelScan(source, parallelism);
+        return new SeatunnelScan(source, parallelism, recordSpeed);
     }
 }

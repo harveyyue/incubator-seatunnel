@@ -64,8 +64,15 @@ public abstract class BaseSeaTunnelSourceFunction extends RichSourceFunction<Row
      */
     private volatile boolean running = true;
 
+    private final int recordSpeed;
+
     public BaseSeaTunnelSourceFunction(SeaTunnelSource<SeaTunnelRow, ?, ?> source) {
+        this(source, -1);
+    }
+
+    public BaseSeaTunnelSourceFunction(SeaTunnelSource<SeaTunnelRow, ?, ?> source, int recordSpeed) {
         this.source = source;
+        this.recordSpeed = recordSpeed;
     }
 
     @Override
@@ -80,7 +87,7 @@ public abstract class BaseSeaTunnelSourceFunction extends RichSourceFunction<Row
     @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public void run(SourceFunction.SourceContext<Row> sourceContext) throws Exception {
-        internalSource.run(new RowCollector(sourceContext, sourceContext.getCheckpointLock(), source.getProducedType()));
+        internalSource.run(new RowCollector(sourceContext, sourceContext.getCheckpointLock(), source.getProducedType(), recordSpeed));
         // Wait for a checkpoint to complete:
         // In the current version(version < 1.14.0), when the operator state of the source changes to FINISHED, jobs cannot be checkpoint executed.
         final long prevCheckpointId = latestTriggerCheckpointId.get();

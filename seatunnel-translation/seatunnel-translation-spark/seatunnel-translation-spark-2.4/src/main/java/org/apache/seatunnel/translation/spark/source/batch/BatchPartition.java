@@ -32,20 +32,22 @@ public class BatchPartition implements InputPartition<InternalRow> {
     protected final SeaTunnelSource<SeaTunnelRow, ?, ?> source;
     protected final Integer parallelism;
     protected final Integer subtaskId;
+    protected final Integer recordSpeed;
 
-    public BatchPartition(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer subtaskId) {
+    public BatchPartition(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer subtaskId, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
         this.subtaskId = subtaskId;
+        this.recordSpeed = recordSpeed;
     }
 
     @Override
     public InputPartitionReader<InternalRow> createPartitionReader() {
         ParallelBatchPartitionReader partitionReader;
         if (source instanceof SupportCoordinate) {
-            partitionReader = new CoordinatedBatchPartitionReader(source, parallelism, subtaskId);
+            partitionReader = new CoordinatedBatchPartitionReader(source, parallelism, subtaskId, recordSpeed);
         } else {
-            partitionReader = new ParallelBatchPartitionReader(source, parallelism, subtaskId);
+            partitionReader = new ParallelBatchPartitionReader(source, parallelism, subtaskId, recordSpeed);
         }
         return new SeaTunnelInputPartitionReader(partitionReader);
     }

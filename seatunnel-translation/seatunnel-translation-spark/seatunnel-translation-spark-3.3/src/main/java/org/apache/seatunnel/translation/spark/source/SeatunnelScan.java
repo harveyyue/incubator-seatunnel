@@ -29,10 +29,12 @@ public class SeatunnelScan implements Scan {
 
     private final SeaTunnelSource<SeaTunnelRow, ?, ?> source;
     private final Integer parallelism;
+    private final Integer recordSpeed;
 
-    public SeatunnelScan(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism) {
+    public SeatunnelScan(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
+        this.recordSpeed = recordSpeed;
     }
 
     @Override
@@ -42,6 +44,6 @@ public class SeatunnelScan implements Scan {
 
     @Override
     public Batch toBatch() {
-        return new SeatunnelBatch(source, parallelism);
+        return new SeatunnelBatch(source, parallelism, recordSpeed);
     }
 }

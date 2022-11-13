@@ -22,26 +22,39 @@ import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.translation.flink.serialization.FlinkRowConverter;
 
+import com.google.common.util.concurrent.RateLimiter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.types.Row;
 
 import java.io.IOException;
 
+@Slf4j
 public class RowCollector implements Collector<SeaTunnelRow> {
 
     protected final SourceFunction.SourceContext<Row> internalCollector;
     protected final FlinkRowConverter rowSerialization;
     protected final Object checkpointLock;
+    protected final boolean isRecordLimit;
+    protected RateLimiter rateLimiter;
 
-    public RowCollector(SourceFunction.SourceContext<Row> internalCollector, Object checkpointLock, SeaTunnelDataType<?> dataType) {
+    public RowCollector(SourceFunction.SourceContext<Row> internalCollector, Object checkpointLock, SeaTunnelDataType<?> dataType, Integer recordSpeed) {
         this.internalCollector = internalCollector;
         this.checkpointLock = checkpointLock;
         this.rowSerialization = new FlinkRowConverter(dataType);
+        this.isRecordLimit = recordSpeed > 0 ? true : false;
+        if (isRecordLimit) {
+            log.info("Enable record limit, reading source with {} per second limit", recordSpeed);
+            this.rateLimiter = RateLimiter.create(recordSpeed);
+        }
     }
 
     @Override
     public void collect(SeaTunnelRow record) {
         try {
+            if (isRecordLimit) {
+                rateLimiter.acquire();
+            }
             internalCollector.collect(rowSerialization.convert(record));
         } catch (IOException e) {
             throw new RuntimeException(e);

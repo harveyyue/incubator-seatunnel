@@ -22,6 +22,7 @@ import org.apache.seatunnel.api.env.EnvCommonOptions;
 import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.api.source.SourceCommonOptions;
 import org.apache.seatunnel.common.Constants;
+import org.apache.seatunnel.common.constants.CollectionConstants;
 import org.apache.seatunnel.common.utils.SerializationUtils;
 import org.apache.seatunnel.plugin.discovery.PluginIdentifier;
 import org.apache.seatunnel.plugin.discovery.seatunnel.SeaTunnelSourcePluginDiscovery;
@@ -63,10 +64,17 @@ public class SourceExecuteProcessor extends AbstractPluginExecuteProcessor<SeaTu
             } else {
                 parallelism = sparkEnvironment.getSparkConf().getInt(EnvCommonOptions.PARALLELISM.key(), EnvCommonOptions.PARALLELISM.defaultValue());
             }
+            int recordSpeed;
+            if (pluginConfig.hasPath(CollectionConstants.RECORD_SPEED)) {
+                recordSpeed = pluginConfig.getInt(CollectionConstants.RECORD_SPEED);
+            } else {
+                recordSpeed = sparkEnvironment.getSparkConf().getInt(CollectionConstants.RECORD_SPEED, -1);
+            }
             Dataset<Row> dataset = sparkEnvironment.getSparkSession()
                 .read()
                 .format(SeaTunnelSource.class.getSimpleName())
                 .option(SourceCommonOptions.PARALLELISM.key(), parallelism)
+                .option(CollectionConstants.RECORD_SPEED, recordSpeed)
                 .option(Constants.SOURCE_SERIALIZATION, SerializationUtils.objectToString(source))
                 .schema((StructType) TypeConverterUtils.convert(source.getProducedType())).load();
             sources.add(dataset);
