@@ -22,6 +22,7 @@ import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.translation.flink.utils.TypeConverterUtils;
 import org.apache.seatunnel.translation.source.BaseSourceFunction;
 
+import com.google.common.util.concurrent.RateLimiter;
 import org.apache.flink.api.common.state.CheckpointListener;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
@@ -64,8 +65,16 @@ public abstract class BaseSeaTunnelSourceFunction extends RichSourceFunction<Row
      */
     private volatile boolean running = true;
 
+    private final int recordSpeed;
+    protected RateLimiter rateLimiter = null;
+
     public BaseSeaTunnelSourceFunction(SeaTunnelSource<SeaTunnelRow, ?, ?> source) {
+        this(source, -1);
+    }
+
+    public BaseSeaTunnelSourceFunction(SeaTunnelSource<SeaTunnelRow, ?, ?> source, int recordSpeed) {
         this.source = source;
+        this.recordSpeed = recordSpeed;
     }
 
     @Override
@@ -73,6 +82,9 @@ public abstract class BaseSeaTunnelSourceFunction extends RichSourceFunction<Row
         super.open(parameters);
         this.internalSource = createInternalSource();
         this.internalSource.open();
+        if (recordSpeed > 0) {
+            this.rateLimiter = RateLimiter.create(recordSpeed);
+        }
     }
 
     protected abstract BaseSourceFunction<SeaTunnelRow> createInternalSource();
@@ -80,7 +92,7 @@ public abstract class BaseSeaTunnelSourceFunction extends RichSourceFunction<Row
     @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public void run(SourceFunction.SourceContext<Row> sourceContext) throws Exception {
-        internalSource.run(new RowCollector(sourceContext, sourceContext.getCheckpointLock(), source.getProducedType()));
+        internalSource.run(new RowCollector(sourceContext, sourceContext.getCheckpointLock(), source.getProducedType(), rateLimiter));
         // Wait for a checkpoint to complete:
         // In the current version(version < 1.14.0), when the operator state of the source changes to FINISHED, jobs cannot be checkpoint executed.
         final long prevCheckpointId = latestTriggerCheckpointId.get();

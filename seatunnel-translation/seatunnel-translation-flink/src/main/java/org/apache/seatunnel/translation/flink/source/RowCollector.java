@@ -22,6 +22,7 @@ import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.translation.flink.serialization.FlinkRowConverter;
 
+import com.google.common.util.concurrent.RateLimiter;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.types.Row;
 
@@ -32,16 +33,25 @@ public class RowCollector implements Collector<SeaTunnelRow> {
     protected final SourceFunction.SourceContext<Row> internalCollector;
     protected final FlinkRowConverter rowSerialization;
     protected final Object checkpointLock;
+    protected final RateLimiter rateLimiter;
 
     public RowCollector(SourceFunction.SourceContext<Row> internalCollector, Object checkpointLock, SeaTunnelDataType<?> dataType) {
+        this(internalCollector, checkpointLock, dataType, null);
+    }
+
+    public RowCollector(SourceFunction.SourceContext<Row> internalCollector, Object checkpointLock, SeaTunnelDataType<?> dataType, RateLimiter rateLimiter) {
         this.internalCollector = internalCollector;
         this.checkpointLock = checkpointLock;
         this.rowSerialization = new FlinkRowConverter(dataType);
+        this.rateLimiter = rateLimiter;
     }
 
     @Override
     public void collect(SeaTunnelRow record) {
         try {
+            if (rateLimiter != null) {
+                rateLimiter.acquire();
+            }
             internalCollector.collect(rowSerialization.convert(record));
         } catch (IOException e) {
             throw new RuntimeException(e);

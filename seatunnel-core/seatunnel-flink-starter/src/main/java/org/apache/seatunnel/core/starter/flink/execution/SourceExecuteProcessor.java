@@ -64,12 +64,16 @@ public class SourceExecuteProcessor extends AbstractPluginExecuteProcessor<SeaTu
         StreamExecutionEnvironment executionEnvironment = flinkEnvironment.getStreamExecutionEnvironment();
         List<DataStream<Row>> sources = new ArrayList<>();
         for (int i = 0; i < plugins.size(); i++) {
+            int recordSpeed = -1;
+            if (pluginConfigs.get(i).hasPath(CollectionConstants.RECORD_SPEED)) {
+                recordSpeed = pluginConfigs.get(i).getInt(CollectionConstants.RECORD_SPEED);
+            }
             SeaTunnelSource internalSource = plugins.get(i);
             BaseSeaTunnelSourceFunction sourceFunction;
             if (internalSource instanceof SupportCoordinate) {
                 sourceFunction = new SeaTunnelCoordinatedSource(internalSource);
             } else {
-                sourceFunction = new SeaTunnelParallelSource(internalSource);
+                sourceFunction = new SeaTunnelParallelSource(internalSource, recordSpeed);
             }
             DataStreamSource<Row> sourceStream = addSource(executionEnvironment,
                 sourceFunction,

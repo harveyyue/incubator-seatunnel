@@ -26,6 +26,7 @@ import org.apache.seatunnel.translation.source.ParallelSource;
 import org.apache.seatunnel.translation.spark.common.InternalRowCollector;
 import org.apache.seatunnel.translation.util.ThreadPoolExecutorFactory;
 
+import com.google.common.util.concurrent.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.spark.sql.catalyst.InternalRow;
 
@@ -52,14 +53,25 @@ public class ParallelBatchPartitionReader {
     protected volatile boolean running = true;
     protected volatile boolean prepare = true;
 
+    protected final boolean isRecordLimit;
+    protected RateLimiter rateLimiter;
+
     protected volatile BaseSourceFunction<SeaTunnelRow> internalSource;
 
-    public ParallelBatchPartitionReader(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer subtaskId) {
+    public ParallelBatchPartitionReader(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer subtaskId, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
         this.subtaskId = subtaskId;
         this.executorService = ThreadPoolExecutorFactory.createScheduledThreadPoolExecutor(1, getEnumeratorThreadName());
         this.handover = new Handover<>();
+        this.isRecordLimit = recordSpeed > 0 ? true : false;
+        if (this.isRecordLimit) {
+            this.rateLimiter = RateLimiter.create(recordSpeed);
+        }
+    }
+
+    public ParallelBatchPartitionReader(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer subtaskId) {
+        this(source, parallelism, subtaskId, -1);
     }
 
     protected String getEnumeratorThreadName() {
@@ -111,6 +123,9 @@ public class ParallelBatchPartitionReader {
 
     public InternalRow get() {
         try {
+            if (isRecordLimit) {
+                rateLimiter.acquire();
+            }
             return handover.pollNext().get();
         } catch (Exception e) {
             throw new RuntimeException(e);

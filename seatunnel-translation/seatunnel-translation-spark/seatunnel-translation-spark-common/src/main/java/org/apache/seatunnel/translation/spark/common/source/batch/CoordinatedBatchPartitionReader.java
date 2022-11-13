@@ -36,8 +36,8 @@ public class CoordinatedBatchPartitionReader extends ParallelBatchPartitionReade
 
     protected final Map<Integer, InternalRowCollector> collectorMap;
 
-    public CoordinatedBatchPartitionReader(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer subtaskId) {
-        super(source, parallelism, subtaskId);
+    public CoordinatedBatchPartitionReader(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer subtaskId, Integer recordSpeed) {
+        super(source, parallelism, subtaskId, recordSpeed);
         this.collectorMap = new HashMap<>(parallelism);
         for (int i = 0; i < parallelism; i++) {
             collectorMap.put(i, new InternalRowCollector(handover, new Object(), source.getProducedType()));

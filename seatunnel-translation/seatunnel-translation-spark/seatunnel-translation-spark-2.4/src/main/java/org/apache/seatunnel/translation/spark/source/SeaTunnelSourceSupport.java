@@ -61,7 +61,8 @@ public class SeaTunnelSourceSupport implements DataSourceV2, ReadSupport, MicroB
     public DataSourceReader createReader(DataSourceOptions options) {
         SeaTunnelSource<SeaTunnelRow, ?, ?> seaTunnelSource = getSeaTunnelSource(options);
         int parallelism = options.getInt(CollectionConstants.PARALLELISM, 1);
-        return new BatchSourceReader(seaTunnelSource, parallelism);
+        int recordSpeed = options.getInt(CollectionConstants.RECORD_SPEED, -1);
+        return new BatchSourceReader(seaTunnelSource, parallelism, recordSpeed);
     }
 
     @Override
