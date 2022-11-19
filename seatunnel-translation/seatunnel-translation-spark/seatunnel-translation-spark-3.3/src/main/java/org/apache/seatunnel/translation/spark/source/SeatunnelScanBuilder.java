@@ -15,27 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.common.constants;
+package org.apache.seatunnel.translation.spark.source;
 
-public class CollectionConstants {
+import org.apache.seatunnel.api.source.SeaTunnelSource;
+import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 
-    public static final int MAP_SIZE = 6;
+import org.apache.spark.sql.connector.read.Scan;
+import org.apache.spark.sql.connector.read.ScanBuilder;
 
-    public static final String PLUGIN_NAME = "plugin_name";
+public class SeatunnelScanBuilder implements ScanBuilder {
 
-    public static final String SEATUNNEL_PLUGIN = "seatunnel";
+    private final SeaTunnelSource<SeaTunnelRow, ?, ?> source;
+    private final Integer parallelism;
 
-    public static final String FLINK_PLUGIN = "flink";
+    public SeatunnelScanBuilder(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism) {
+        this.source = source;
+        this.parallelism = parallelism;
+    }
 
-    public static final String SPARK_PLUGIN = "spark";
-
-    public static final String SOURCE_PLUGIN = "source";
-
-    public static final String TRANSFORM_PLUGIN = "transform";
-
-    public static final String SINK_PLUGIN = "sink";
-
-    public static final String PARALLELISM = "parallelism";
-
-    public static final String SAVE_MODE = "save_mode";
+    @Override
+    public Scan build() {
+        return new SeatunnelScan(source, parallelism);
+    }
 }

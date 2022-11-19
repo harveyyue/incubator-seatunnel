@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.translation.spark.sink;
+package org.apache.seatunnel.translation.spark.common.sink;
 
 import org.apache.seatunnel.api.sink.SeaTunnelSink;
 import org.apache.seatunnel.common.Constants;
@@ -25,10 +25,35 @@ import org.apache.spark.sql.DataFrameWriter;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.streaming.DataStreamWriter;
 import org.apache.spark.sql.streaming.OutputMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ServiceLoader;
 
 public class SparkSinkInjector {
 
-    private static final String SPARK_SINK_CLASS_NAME = "org.apache.seatunnel.translation.spark.sink.SparkSink";
+    private static final Logger LOGGER = LoggerFactory.getLogger(SparkSinkInjector.class);
+
+    private static final String SPARK_SINK_CLASS_NAME = loadSparkSink();
+
+    private static String loadSparkSink() {
+        Iterator<SparkSinkService> iterator = ServiceLoader
+                .load(SparkSinkService.class, Thread.currentThread().getContextClassLoader()).iterator();
+        List<SparkSinkService> list = new ArrayList<>();
+        while (iterator.hasNext()) {
+            list.add(iterator.next());
+        }
+        if (list.isEmpty()) {
+            throw new IllegalArgumentException("Can't found implementation of SparkSinkService.");
+        }
+        if (list.size() > 1) {
+            LOGGER.warn(String.format("Found %s implementation of SparkSinkService, we will use the first.", list.size()));
+        }
+        return list.get(0).getClass().getName();
+    }
 
     public static DataStreamWriter<Row> inject(DataStreamWriter<Row> dataset, SeaTunnelSink<?, ?, ?, ?> sink) {
         return dataset.format(SPARK_SINK_CLASS_NAME)

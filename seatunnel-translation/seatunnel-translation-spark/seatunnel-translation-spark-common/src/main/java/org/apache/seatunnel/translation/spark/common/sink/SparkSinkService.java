@@ -15,27 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.common.constants;
+package org.apache.seatunnel.translation.spark.common.sink;
 
-public class CollectionConstants {
-
-    public static final int MAP_SIZE = 6;
-
-    public static final String PLUGIN_NAME = "plugin_name";
-
-    public static final String SEATUNNEL_PLUGIN = "seatunnel";
-
-    public static final String FLINK_PLUGIN = "flink";
-
-    public static final String SPARK_PLUGIN = "spark";
-
-    public static final String SOURCE_PLUGIN = "source";
-
-    public static final String TRANSFORM_PLUGIN = "transform";
-
-    public static final String SINK_PLUGIN = "sink";
-
-    public static final String PARALLELISM = "parallelism";
-
-    public static final String SAVE_MODE = "save_mode";
+public interface SparkSinkService {
 }
