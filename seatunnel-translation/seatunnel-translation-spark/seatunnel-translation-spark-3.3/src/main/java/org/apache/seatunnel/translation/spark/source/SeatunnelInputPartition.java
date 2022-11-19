@@ -15,21 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.common.constants;
+package org.apache.seatunnel.translation.spark.source;
 
-public class CollectionConstants {
+import org.apache.spark.sql.connector.read.InputPartition;
 
-    public static final String PLUGIN_NAME = "plugin_name";
+public class SeatunnelInputPartition implements InputPartition {
 
-    public static final String SEATUNNEL_PLUGIN = "seatunnel";
+    private final Integer subtaskId;
 
-    public static final String SOURCE_PLUGIN = "source";
+    public SeatunnelInputPartition(Integer subtaskId) {
+        this.subtaskId = subtaskId;
+    }
 
-    public static final String TRANSFORM_PLUGIN = "transform";
-
-    public static final String SINK_PLUGIN = "sink";
-
-    public static final String PARALLELISM = "parallelism";
-
-    public static final String SAVE_MODE = "save_mode";
+    public Integer getSubtaskId() {
+        return subtaskId;
+    }
 }

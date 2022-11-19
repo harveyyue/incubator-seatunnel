@@ -26,14 +26,15 @@ import org.apache.seatunnel.core.starter.exception.TaskExecuteException;
 import org.apache.seatunnel.plugin.discovery.PluginIdentifier;
 import org.apache.seatunnel.plugin.discovery.seatunnel.SeaTunnelSinkPluginDiscovery;
 import org.apache.seatunnel.spark.SparkEnvironment;
+import org.apache.seatunnel.translation.spark.common.sink.SparkSinkInjector;
 import org.apache.seatunnel.translation.spark.common.utils.TypeConverterUtils;
-import org.apache.seatunnel.translation.spark.sink.SparkSinkInjector;
 
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
 import com.google.common.collect.Lists;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SaveMode;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -82,7 +83,16 @@ public class SinkExecuteProcessor extends AbstractPluginExecuteProcessor<SeaTunn
             dataset.sparkSession().read().option(SinkCommonOptions.PARALLELISM.key(), parallelism);
             // TODO modify checkpoint location
             seaTunnelSink.setTypeInfo((SeaTunnelRowType) TypeConverterUtils.convert(dataset.schema()));
-            SparkSinkInjector.inject(dataset.write(), seaTunnelSink).option("checkpointLocation", "/tmp").save();
+            String saveMode;
+            if (sinkConfig.hasPath(CollectionConstants.SAVE_MODE)) {
+                saveMode = sinkConfig.getString(CollectionConstants.SAVE_MODE);
+            } else {
+                saveMode = SaveMode.Append.name();
+            }
+            SparkSinkInjector.inject(dataset.write(), seaTunnelSink)
+                    .option("checkpointLocation", "/tmp")
+                    .mode(saveMode)
+                    .save();
         }
         // the sink is the last stream
         return null;

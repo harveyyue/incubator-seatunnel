@@ -15,21 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.common.constants;
+package org.apache.seatunnel.translation.spark.sink;
 
-public class CollectionConstants {
+import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
-    public static final String PLUGIN_NAME = "plugin_name";
+import javax.annotation.Nullable;
 
-    public static final String SEATUNNEL_PLUGIN = "seatunnel";
+public class SparkWriterCommitMessage<T> implements WriterCommitMessage {
 
-    public static final String SOURCE_PLUGIN = "source";
+    private @Nullable T message;
 
-    public static final String TRANSFORM_PLUGIN = "transform";
+    SparkWriterCommitMessage(T message) {
+        this.message = message;
+    }
 
-    public static final String SINK_PLUGIN = "sink";
+    public T getMessage() {
+        return message;
+    }
 
-    public static final String PARALLELISM = "parallelism";
-
-    public static final String SAVE_MODE = "save_mode";
+    public void setMessage(T message) {
+        this.message = message;
+    }
 }
