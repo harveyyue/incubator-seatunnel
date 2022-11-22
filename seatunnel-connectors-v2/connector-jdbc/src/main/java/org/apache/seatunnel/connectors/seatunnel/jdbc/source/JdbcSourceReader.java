@@ -33,7 +33,7 @@ import java.util.List;
 
 public class JdbcSourceReader implements SourceReader<SeaTunnelRow, JdbcSourceSplit> {
 
-    protected static final Logger LOG = LoggerFactory.getLogger(JdbcSource.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(JdbcSourceReader.class);
 
     SourceReader.Context context;
     Deque<JdbcSourceSplit> splits = new LinkedList<>();

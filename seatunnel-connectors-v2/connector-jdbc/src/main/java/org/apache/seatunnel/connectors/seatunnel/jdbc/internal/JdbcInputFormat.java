@@ -207,7 +207,7 @@ public class JdbcInputFormat implements Serializable {
     }
 
     /**
-     * Convert a row of data to seatunnelRow
+     * Convert a row of data to SeaTunnelRow
      */
     public SeaTunnelRow nextRecord() {
         try {

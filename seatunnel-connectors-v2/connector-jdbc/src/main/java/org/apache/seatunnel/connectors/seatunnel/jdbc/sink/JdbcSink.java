@@ -18,6 +18,7 @@
 package org.apache.seatunnel.connectors.seatunnel.jdbc.sink;
 
 import org.apache.seatunnel.api.common.JobContext;
+import org.apache.seatunnel.api.common.PostFailException;
 import org.apache.seatunnel.api.common.PrepareFailException;
 import org.apache.seatunnel.api.serialization.DefaultSerializer;
 import org.apache.seatunnel.api.serialization.Serializer;
@@ -27,7 +28,10 @@ import org.apache.seatunnel.api.sink.SinkWriter;
 import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
+import org.apache.seatunnel.common.constants.PluginType;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.config.JdbcSinkOptions;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialect;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialectLoader;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.state.JdbcAggregatedCommitInfo;
@@ -37,8 +41,12 @@ import org.apache.seatunnel.connectors.seatunnel.jdbc.state.XidInfo;
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
 import com.google.auto.service.AutoService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +54,8 @@ import java.util.Optional;
 @AutoService(SeaTunnelSink.class)
 public class JdbcSink
     implements SeaTunnelSink<SeaTunnelRow, JdbcSinkState, XidInfo, JdbcAggregatedCommitInfo> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JdbcSink.class);
 
     private Config pluginConfig;
 
@@ -56,6 +66,12 @@ public class JdbcSink
     private JdbcSinkOptions jdbcSinkOptions;
 
     private JdbcDialect dialect;
+
+    private JdbcConnectionProvider connectionProvider;
+
+    private List<String> preSqls;
+
+    private List<String> postSqls;
 
     @Override
     public String getPluginName() {
@@ -68,6 +84,30 @@ public class JdbcSink
         this.pluginConfig = pluginConfig;
         this.jdbcSinkOptions = new JdbcSinkOptions(this.pluginConfig);
         this.dialect = JdbcDialectLoader.load(jdbcSinkOptions.getJdbcConnectionOptions().getUrl());
+        this.connectionProvider = new SimpleJdbcConnectionProvider(jdbcSinkOptions.getJdbcConnectionOptions());
+        this.preSqls = jdbcSinkOptions.getJdbcConnectionOptions().getPrepareSql();
+        this.postSqls = jdbcSinkOptions.getJdbcConnectionOptions().getPostSql();
+        if (this.preSqls != null && this.preSqls.size() > 0) {
+            LOG.info("Execute prepare sqls: {}", this.preSqls);
+            try {
+                execute(preSqls);
+            } catch (SQLException | ClassNotFoundException ex) {
+                throw new PrepareFailException(getPluginName(), PluginType.SINK, ex.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void post(Config pluginConfig)
+        throws PostFailException {
+        if (this.postSqls != null && this.postSqls.size() > 0) {
+            LOG.info("Execute post sqls: {}", this.postSqls);
+            try {
+                execute(postSqls);
+            } catch (SQLException | ClassNotFoundException ex) {
+                throw new PostFailException(getPluginName(), PluginType.SINK, ex.getMessage());
+            }
+        }
     }
 
     @Override
@@ -148,5 +188,15 @@ public class JdbcSink
             return Optional.of(new DefaultSerializer<>());
         }
         return Optional.empty();
+    }
+
+    private void execute(List<String> sqls) throws SQLException, ClassNotFoundException {
+        try (Statement stmt = this.connectionProvider.getOrEstablishConnection().createStatement()) {
+            for (String sql : sqls) {
+                stmt.execute(sql);
+            }
+        } finally {
+            this.connectionProvider.closeConnection();
+        }
     }
 }

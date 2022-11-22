@@ -53,6 +53,9 @@ public class JdbcConfig implements Serializable {
 
     public static final Option<Integer> BATCH_INTERVAL_MS = Options.key("batch_interval_ms").intType().noDefaultValue().withDescription("batch interval milliSecond");
 
+    public static final Option<List<String>> PREPARE_SQL = Options.key("pre_sql").listType().noDefaultValue().withDescription("execute prepare sqls");
+
+    public static final Option<List<String>> POST_SQL = Options.key("post_sql").listType().noDefaultValue().withDescription("execute post sqls");
 
     public static final Option<Boolean> IS_EXACTLY_ONCE = Options.key("is_exactly_once").booleanType().defaultValue(true).withDescription("exactly once");
 
@@ -103,6 +106,12 @@ public class JdbcConfig implements Serializable {
         }
         if (config.hasPath(JdbcConfig.BATCH_INTERVAL_MS.key())) {
             jdbcOptions.batchIntervalMs = config.getInt(JdbcConfig.BATCH_INTERVAL_MS.key());
+        }
+        if (config.hasPath(JdbcConfig.PREPARE_SQL.key())) {
+            jdbcOptions.prepareSql = config.getStringList(JdbcConfig.PREPARE_SQL.key());
+        }
+        if (config.hasPath(JdbcConfig.POST_SQL.key())) {
+            jdbcOptions.postSql = config.getStringList(JdbcConfig.POST_SQL.key());
         }
 
         if (config.hasPath(JdbcConfig.IS_EXACTLY_ONCE.key()) && config.getBoolean(JdbcConfig.IS_EXACTLY_ONCE.key())) {

@@ -94,6 +94,9 @@ public class SinkExecuteProcessor extends AbstractPluginExecuteProcessor<SeaTunn
                     .mode(saveMode)
                     .save();
         }
+        for (int i = 0; i < plugins.size(); i++) {
+            plugins.get(i).post(pluginConfigs.get(i));
+        }
         // the sink is the last stream
         return null;
     }
