@@ -17,16 +17,26 @@
 
 package org.apache.seatunnel.common.config;
 
+import org.apache.seatunnel.common.utils.SechubUtils;
+
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 import org.apache.seatunnel.shade.com.typesafe.config.ConfigFactory;
 import org.apache.seatunnel.shade.com.typesafe.config.ConfigValue;
+import org.apache.seatunnel.shade.com.typesafe.config.ConfigValueFactory;
+import org.apache.seatunnel.shade.com.typesafe.config.ConfigValueType;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
+@Slf4j
 public final class TypesafeConfigUtils {
 
     private TypesafeConfigUtils() {
@@ -112,9 +122,54 @@ public final class TypesafeConfigUtils {
         throw new RuntimeException("Unsupported config type, configKey: " + configKey);
     }
 
+    public static List<? extends Config> getConfigList(Config config, String configKey) {
+        return getConfigList(config, configKey, Collections.emptyList());
+    }
+
     public static List<? extends Config> getConfigList(Config config,
                                                        String configKey,
                                                        @NonNull List<? extends Config> defaultValue) {
-        return config.hasPath(configKey) ? config.getConfigList(configKey) : defaultValue;
+        if (!config.hasPath(configKey)) {
+            return defaultValue;
+        }
+
+        List<? extends Config> configList = config.getConfigList(configKey);
+        Map<String, String> plainValues = decryptConfigs(configList);
+        if (plainValues.size() > 0) {
+            log.info("Decrypt path: {}", configKey);
+            configList = configList.stream()
+                .map(m -> {
+                    Config result = m;
+                    for (Map.Entry<String, String> entry : plainValues.entrySet()) {
+                        result = m.withValue(entry.getKey(), ConfigValueFactory.fromAnyRef(entry.getValue()));
+                    }
+                    return result;
+                })
+                .collect(Collectors.toList());
+        }
+        return configList;
+    }
+
+    private static Map<String, String> decryptConfigs(List<? extends Config> configs) {
+        Map<String, String> result = new HashMap<>();
+        configs.forEach(config ->
+            config.entrySet().forEach(entry -> {
+                ConfigValue value = entry.getValue();
+                if (value.valueType().equals(ConfigValueType.STRING)) {
+                    Matcher matcher = SechubUtils.SECHUB_PATTERN.matcher(value.unwrapped().toString());
+                    if (matcher.matches()) {
+                        String secKey = matcher.group(1);
+                        String encryptText = matcher.group(2);
+                        try {
+                            String plainText = SechubUtils.decrypt(SechubUtils.CRYPTO_TYPE, secKey, encryptText);
+                            result.put(entry.getKey(), plainText);
+                        } catch (Exception e) {
+                            throw new ConfigRuntimeException("Sechub decrypt error: ", e);
+                        }
+                    }
+                }
+            })
+        );
+        return result;
     }
 }

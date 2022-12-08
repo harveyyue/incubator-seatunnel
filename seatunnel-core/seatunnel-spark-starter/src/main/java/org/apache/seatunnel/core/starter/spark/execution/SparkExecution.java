@@ -32,7 +32,6 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -47,10 +46,12 @@ public class SparkExecution implements TaskExecution {
         this.sparkEnvironment = new SparkEnvironmentFactory(config).getEnvironment();
         JobContext jobContext = new JobContext();
         jobContext.setJobMode(sparkEnvironment.getJobMode());
-        this.sourcePluginExecuteProcessor = new SourceExecuteProcessor(sparkEnvironment, jobContext, config.getConfigList(Constants.SOURCE));
+        this.sourcePluginExecuteProcessor = new SourceExecuteProcessor(sparkEnvironment, jobContext,
+            TypesafeConfigUtils.getConfigList(config, Constants.SOURCE));
         this.transformPluginExecuteProcessor = new TransformExecuteProcessor(sparkEnvironment, jobContext,
-            TypesafeConfigUtils.getConfigList(config, Constants.TRANSFORM, Collections.emptyList()));
-        this.sinkPluginExecuteProcessor = new SinkExecuteProcessor(sparkEnvironment, jobContext, config.getConfigList(Constants.SINK));
+            TypesafeConfigUtils.getConfigList(config, Constants.TRANSFORM));
+        this.sinkPluginExecuteProcessor = new SinkExecuteProcessor(sparkEnvironment, jobContext,
+            TypesafeConfigUtils.getConfigList(config, Constants.SINK));
     }
 
     @Override

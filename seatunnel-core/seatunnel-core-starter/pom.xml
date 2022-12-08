@@ -59,5 +59,11 @@
             <groupId>com.beust</groupId>
             <artifactId>jcommander</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.18.1</version>
+        </dependency>
     </dependencies>
 </project>

@@ -74,10 +74,12 @@ public class FlinkExecution implements TaskExecution {
         JobContext jobContext = new JobContext();
         jobContext.setJobMode(FlinkEnvironmentFactory.getJobMode(config));
 
-        this.sourcePluginExecuteProcessor = new SourceExecuteProcessor(jarPaths, config.getConfigList(Constants.SOURCE), jobContext);
+        this.sourcePluginExecuteProcessor = new SourceExecuteProcessor(jarPaths,
+            TypesafeConfigUtils.getConfigList(config, Constants.SOURCE), jobContext);
         this.transformPluginExecuteProcessor = new TransformExecuteProcessor(jarPaths,
-            TypesafeConfigUtils.getConfigList(config, Constants.TRANSFORM, Collections.emptyList()), jobContext);
-        this.sinkPluginExecuteProcessor = new SinkExecuteProcessor(jarPaths, config.getConfigList(Constants.SINK), jobContext);
+            TypesafeConfigUtils.getConfigList(config, Constants.TRANSFORM), jobContext);
+        this.sinkPluginExecuteProcessor = new SinkExecuteProcessor(jarPaths,
+            TypesafeConfigUtils.getConfigList(config, Constants.SINK), jobContext);
 
         this.flinkEnvironment = new FlinkEnvironmentFactory(this.registerPlugin(config, jarPaths)).getEnvironment();
 

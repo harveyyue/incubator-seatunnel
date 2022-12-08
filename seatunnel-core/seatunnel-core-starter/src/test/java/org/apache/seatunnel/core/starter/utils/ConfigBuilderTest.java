@@ -18,6 +18,7 @@
 package org.apache.seatunnel.core.starter.utils;
 
 import org.apache.seatunnel.common.Constants;
+import org.apache.seatunnel.common.utils.SechubUtils;
 import org.apache.seatunnel.core.starter.config.ConfigBuilder;
 
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
@@ -39,6 +40,6 @@ public class ConfigBuilderTest {
         String plainText = sourceConfigs.get(0).getString("password");
 
         Assertions.assertNotNull(config);
-        Assertions.assertEquals(ConfigBuilder.SECHUB_PATTERN.matcher(plainText).matches(), false);
+        Assertions.assertEquals(SechubUtils.SECHUB_PATTERN.matcher(plainText).matches(), false);
     }
 }

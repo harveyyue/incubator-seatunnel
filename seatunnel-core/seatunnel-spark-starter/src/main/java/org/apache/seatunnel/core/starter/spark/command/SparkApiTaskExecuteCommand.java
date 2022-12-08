@@ -17,20 +17,12 @@
 
 package org.apache.seatunnel.core.starter.spark.command;
 
-import static org.apache.seatunnel.core.starter.utils.FileUtils.checkConfigExist;
-
 import org.apache.seatunnel.core.starter.command.Command;
-import org.apache.seatunnel.core.starter.config.ConfigBuilder;
 import org.apache.seatunnel.core.starter.exception.CommandExecuteException;
 import org.apache.seatunnel.core.starter.spark.args.SparkCommandArgs;
 import org.apache.seatunnel.core.starter.spark.execution.SparkExecution;
-import org.apache.seatunnel.core.starter.utils.FileUtils;
-
-import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
 import lombok.extern.slf4j.Slf4j;
-
-import java.nio.file.Path;
 
 /**
  * todo: do we need to move these class to a new module? since this may cause version conflict with the old Spark version.
@@ -47,11 +39,8 @@ public class SparkApiTaskExecuteCommand implements Command<SparkCommandArgs> {
 
     @Override
     public void execute() throws CommandExecuteException {
-        Path configFile = FileUtils.getConfigPath(sparkCommandArgs);
-        checkConfigExist(configFile);
-        Config config = new ConfigBuilder(configFile).getConfig();
         try {
-            SparkExecution seaTunnelTaskExecution = new SparkExecution(config);
+            SparkExecution seaTunnelTaskExecution = new SparkExecution(getConfig(sparkCommandArgs));
             seaTunnelTaskExecution.execute();
         } catch (Exception e) {
             log.error("Run SeaTunnel on spark failed.", e);

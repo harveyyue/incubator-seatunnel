@@ -32,9 +32,11 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.regex.Pattern;
 
 @SuppressWarnings("checkstyle:MagicNumber")
 public class SechubUtils {
+    public static final Pattern SECHUB_PATTERN = Pattern.compile("\\$\\{sechub:(.*):(.*)\\}");
     public static final String CRYPTO_TYPE = "ase256gcm";
     private static final byte[] IV = new byte[12];
     private static final Base64.Encoder BASE64_ENCODER = Base64.getEncoder();

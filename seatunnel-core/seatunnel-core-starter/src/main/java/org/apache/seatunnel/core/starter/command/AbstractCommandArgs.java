@@ -46,6 +46,18 @@ public abstract class AbstractCommandArgs implements CommandArgs {
             description = "Show the usage message")
     private boolean help = false;
 
+    @Parameter(names = {"-s3ak", "--s3-access-key"},
+            description = "S3 Access Key Id")
+    private String s3AccessKeyId;
+
+    @Parameter(names = {"-s3sk", "--s3-secret-key"},
+            description = "S3 Secret Access Key")
+    private String s3SecretAccessKey;
+
+    @Parameter(names = {"-s3r", "--s3-region"},
+            description = "S3 Region")
+    private String s3Region;
+
     /**
      * Undefined parameters parsed will be stored here as engine original command parameters.
      */
@@ -107,4 +119,19 @@ public abstract class AbstractCommandArgs implements CommandArgs {
         throw new UnsupportedOperationException("abstract class CommandArgs not support this method");
     }
 
+    public String getS3AccessKeyId() {
+        return this.s3AccessKeyId;
+    }
+
+    public String getS3SecretAccessKey() {
+        return this.s3SecretAccessKey;
+    }
+
+    public String getS3Region() {
+        return this.s3Region;
+    }
+
+    public boolean enableS3Config() {
+        return this.s3AccessKeyId != null && this.s3SecretAccessKey != null;
+    }
 }

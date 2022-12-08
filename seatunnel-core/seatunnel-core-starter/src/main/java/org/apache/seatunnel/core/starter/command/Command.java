@@ -17,8 +17,16 @@
 
 package org.apache.seatunnel.core.starter.command;
 
+import static org.apache.seatunnel.core.starter.utils.FileUtils.checkConfigExist;
+
+import org.apache.seatunnel.core.starter.config.ConfigBuilder;
 import org.apache.seatunnel.core.starter.exception.CommandExecuteException;
 import org.apache.seatunnel.core.starter.exception.ConfigCheckException;
+import org.apache.seatunnel.core.starter.utils.FileUtils;
+
+import org.apache.seatunnel.shade.com.typesafe.config.Config;
+
+import java.nio.file.Path;
 
 /**
  * Command interface.
@@ -34,4 +42,16 @@ public interface Command<T extends CommandArgs> {
      */
     void execute() throws CommandExecuteException, ConfigCheckException;
 
+    default Config getConfig(AbstractCommandArgs commandArgs) {
+        ConfigBuilder configBuilder;
+        if (commandArgs.enableS3Config()) {
+            configBuilder = new ConfigBuilder(commandArgs.getS3AccessKeyId(), commandArgs.getS3SecretAccessKey(),
+                    commandArgs.getS3Region(), commandArgs.getConfigFile());
+        } else {
+            Path configFile = FileUtils.getConfigPath(commandArgs);
+            checkConfigExist(configFile);
+            configBuilder = new ConfigBuilder(configFile);
+        }
+        return configBuilder.getConfig();
+    }
 }
