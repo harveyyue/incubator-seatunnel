@@ -19,6 +19,7 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.config;
 
 import static org.apache.seatunnel.connectors.seatunnel.jdbc.config.JdbcConfig.buildJdbcConnectionOptions;
 
+import org.apache.seatunnel.common.aviator.AviatorHelper;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
 
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
@@ -82,5 +83,9 @@ public class JdbcSourceOptions implements Serializable {
 
     public int getFetchSize() {
         return fetchSize;
+    }
+
+    public String getQuery() {
+        return AviatorHelper.parseExpression(query);
     }
 }

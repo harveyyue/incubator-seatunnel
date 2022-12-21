@@ -15,24 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.spark.transform
+package org.apache.seatunnel.common.aviator;
 
-import org.apache.seatunnel.common.aviator.AviatorHelper
-import org.apache.seatunnel.common.config.CheckConfigUtil.checkAllExists
-import org.apache.seatunnel.common.config.CheckResult
-import org.apache.seatunnel.spark.{BaseSparkTransform, SparkEnvironment}
-import org.apache.spark.sql.{Dataset, Row}
+import org.apache.seatunnel.common.utils.SeaTunnelException;
 
-class Sql extends BaseSparkTransform {
+public enum DateDirectionEnum {
+    START, END;
 
-  override def process(data: Dataset[Row], env: SparkEnvironment): Dataset[Row] = {
-    env.getSparkSession.sql(AviatorHelper.parseExpression(config.getString("sql")))
-  }
-
-  override def checkConfig(): CheckResult = {
-    checkAllExists(config, "sql")
-  }
-
-  override def getPluginName: String = "sql"
-
+    public static DateDirectionEnum getByName(String direction) {
+        for (DateDirectionEnum dateDirectionEnum : values()) {
+            if (direction.equalsIgnoreCase(dateDirectionEnum.name())) {
+                return dateDirectionEnum;
+            }
+        }
+        throw new SeaTunnelException("Not support date direction: " + direction);
+    }
 }

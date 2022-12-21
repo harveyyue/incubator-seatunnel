@@ -43,6 +43,10 @@
             <artifactId>commons-collections4</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.googlecode.aviator</groupId>
+            <artifactId>aviator</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
