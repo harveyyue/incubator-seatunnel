@@ -32,6 +32,4 @@ public class CollectionConstants {
     public static final String PARALLELISM = "parallelism";
 
     public static final String SAVE_MODE = "save_mode";
-
-    public static final String RECORD_SPEED = "record_speed";
 }

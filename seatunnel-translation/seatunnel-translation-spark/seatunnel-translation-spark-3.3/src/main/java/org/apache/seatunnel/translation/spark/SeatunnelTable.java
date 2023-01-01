@@ -19,10 +19,10 @@ package org.apache.seatunnel.translation.spark;
 
 import org.apache.seatunnel.api.sink.SeaTunnelSink;
 import org.apache.seatunnel.api.source.SeaTunnelSource;
+import org.apache.seatunnel.api.source.SourceCommonOptions;
 import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.common.Constants;
-import org.apache.seatunnel.common.constants.CollectionConstants;
 import org.apache.seatunnel.common.utils.SerializationUtils;
 import org.apache.seatunnel.translation.spark.common.utils.TypeConverterUtils;
 import org.apache.seatunnel.translation.spark.sink.SeatunnelWriteBuilder;
@@ -58,8 +58,8 @@ public class SeatunnelTable implements Table, SupportsRead, SupportsWrite {
             throw new RuntimeException("Serialization information for the SeaTunnelSource is required");
         }
         SeaTunnelSource<SeaTunnelRow, ?, ?> seaTunnelSource = SerializationUtils.stringToObject(source);
-        int parallelism = Integer.parseInt(options.getOrDefault(CollectionConstants.PARALLELISM, "1"));
-        int recordSpeed = Integer.parseInt(options.getOrDefault(CollectionConstants.RECORD_SPEED, "-1"));
+        int parallelism = Integer.parseInt(options.getOrDefault(SourceCommonOptions.PARALLELISM.key(), "1"));
+        int recordSpeed = Integer.parseInt(options.getOrDefault(SourceCommonOptions.RECORD_SPEED.key(), "-1"));
         return new SeatunnelScanBuilder(seaTunnelSource, parallelism, recordSpeed);
     }
 

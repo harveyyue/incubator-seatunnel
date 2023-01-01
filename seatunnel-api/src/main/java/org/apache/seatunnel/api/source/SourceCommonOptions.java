@@ -42,4 +42,11 @@ public class SourceCommonOptions {
             .defaultValue(1)
             .withDescription("When parallelism is not specified, the parallelism in env is used by default. " +
                 "When parallelism is specified, it will override the parallelism in env.");
+
+    public static final Option<Integer> RECORD_SPEED =
+            Options.key("record_speed")
+                    .intType()
+                    .defaultValue(-1)
+                    .withDescription("When record_speed is not specified, don't do any limit in sink side." +
+                            "When record_speed is specified, it will limit with record speed numbers in sink side.");
 }

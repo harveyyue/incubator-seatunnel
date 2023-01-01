@@ -62,8 +62,8 @@ public class SourceExecuteProcessor extends AbstractPluginExecuteProcessor<SeaTu
         List<DataStream<Row>> sources = new ArrayList<>();
         for (int i = 0; i < plugins.size(); i++) {
             int recordSpeed = -1;
-            if (pluginConfigs.get(i).hasPath(CollectionConstants.RECORD_SPEED)) {
-                recordSpeed = pluginConfigs.get(i).getInt(CollectionConstants.RECORD_SPEED);
+            if (pluginConfigs.get(i).hasPath(SourceCommonOptions.RECORD_SPEED.key())) {
+                recordSpeed = pluginConfigs.get(i).getInt(SourceCommonOptions.RECORD_SPEED.key());
             }
             SeaTunnelSource internalSource = plugins.get(i);
             BaseSeaTunnelSourceFunction sourceFunction;
