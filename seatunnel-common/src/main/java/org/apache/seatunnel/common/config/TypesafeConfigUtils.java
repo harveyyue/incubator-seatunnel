@@ -172,4 +172,10 @@ public final class TypesafeConfigUtils {
         );
         return result;
     }
+
+    public static Map<String, String> extractPluginConfig(Config pluginConfig) {
+        Map<String, String> result = new HashMap<>();
+        pluginConfig.entrySet().forEach(entry -> result.put(entry.getKey(), entry.getValue().unwrapped().toString()));
+        return result;
+    }
 }

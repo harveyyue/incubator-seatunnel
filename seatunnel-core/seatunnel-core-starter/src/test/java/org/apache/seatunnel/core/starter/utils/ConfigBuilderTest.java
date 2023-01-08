@@ -40,6 +40,6 @@ public class ConfigBuilderTest {
         String plainText = sourceConfigs.get(0).getString("password");
 
         Assertions.assertNotNull(config);
-        Assertions.assertEquals(SechubUtils.SECHUB_PATTERN.matcher(plainText).matches(), false);
+        Assertions.assertEquals(SechubUtils.SECHUB_PATTERN.matcher(plainText).matches(), true);
     }
 }

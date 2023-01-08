@@ -15,29 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.connectors.seatunnel.hudi.source;
+package org.apache.seatunnel.connectors.seatunnel.hudi.sink;
 
-import org.apache.seatunnel.api.configuration.util.OptionRule;
-import org.apache.seatunnel.api.table.factory.Factory;
-import org.apache.seatunnel.api.table.factory.TableSourceFactory;
-import org.apache.seatunnel.connectors.seatunnel.hudi.config.HudiSourceConfig;
+import org.apache.seatunnel.api.sink.SeaTunnelSink;
+import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
+import org.apache.seatunnel.api.table.type.SeaTunnelRow;
+import org.apache.seatunnel.connectors.seatunnel.common.sink.AbstractSink;
 
 import com.google.auto.service.AutoService;
 
-@AutoService(Factory.class)
-public class HudiSourceFactory implements TableSourceFactory {
+@AutoService(SeaTunnelSink.class)
+public class HudiSink extends AbstractSink<SeaTunnelRow, Void> {
 
     @Override
-    public String factoryIdentifier() {
+    public String getPluginName() {
         return "Hudi";
     }
 
     @Override
-    public OptionRule optionRule() {
-        return OptionRule.builder()
-                .required(HudiSourceConfig.TABLE_PATH, HudiSourceConfig.TABLE_TYPE, HudiSourceConfig.CONF_FILES)
-                .optional(HudiSourceConfig.USE_KERBEROS)
-                .conditional(HudiSourceConfig.USE_KERBEROS, true, HudiSourceConfig.KERBEROS_PRINCIPAL, HudiSourceConfig.KERBEROS_PRINCIPAL_FILE)
-                .build();
+    public SeaTunnelDataType<SeaTunnelRow> getConsumedType() {
+        return this.seaTunnelRowType;
     }
 }

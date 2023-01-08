@@ -62,8 +62,13 @@ public class SparkSinkInjector {
     }
 
     public static DataFrameWriter<Row> inject(DataFrameWriter<Row> dataset, SeaTunnelSink<?, ?, ?, ?> sink) {
-        return dataset.format(SPARK_SINK_CLASS_NAME)
-            .option(Constants.SINK, SerializationUtils.objectToString(sink));
+        switch (sink.getPluginName()) {
+            case "Hudi":
+                return dataset.format("org.apache.hudi").options(sink.getPluginConfig());
+            default:
+                return dataset.format(SPARK_SINK_CLASS_NAME)
+                        .option(Constants.SINK, SerializationUtils.objectToString(sink));
+        }
     }
 
 }
