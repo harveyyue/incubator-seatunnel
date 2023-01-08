@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.translation.spark.common.source.micro;
+package org.apache.seatunnel.translation.spark.source.micro;
 
 import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.common.utils.SerializationUtils;
 import org.apache.seatunnel.translation.source.BaseSourceFunction;
-import org.apache.seatunnel.translation.spark.common.ReaderState;
+import org.apache.seatunnel.translation.spark.source.ReaderState;
 import org.apache.seatunnel.translation.spark.common.source.batch.ParallelBatchPartitionReader;
 import org.apache.seatunnel.translation.util.ThreadPoolExecutorFactory;
 

@@ -21,8 +21,6 @@ import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.api.source.SupportCoordinate;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.translation.spark.common.source.batch.ParallelBatchPartitionReader;
-import org.apache.seatunnel.translation.spark.common.source.micro.CoordinatedMicroBatchPartitionReader;
-import org.apache.seatunnel.translation.spark.common.source.micro.ParallelMicroBatchPartitionReader;
 import org.apache.seatunnel.translation.spark.source.SeaTunnelInputPartitionReader;
 
 import org.apache.spark.sql.catalyst.InternalRow;

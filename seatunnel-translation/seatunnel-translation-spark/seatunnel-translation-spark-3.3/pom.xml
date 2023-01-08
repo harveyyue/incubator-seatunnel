@@ -25,39 +25,26 @@
 
     <artifactId>seatunnel-translation-spark-3.3</artifactId>
 
-    <properties>
-        <spark.version>${spark3.3.version}</spark.version>
-        <scala.binary.version>${scala2.12.binary.version}</scala.binary.version>
-        <spark.scope>provided</spark.scope>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.seatunnel</groupId>
             <artifactId>seatunnel-translation-spark-common</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <!--spark-->
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
-            <scope>${spark.scope}</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
-            <scope>${spark.scope}</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
-            <scope>${spark.scope}</scope>
         </dependency>
     </dependencies>
 </project>

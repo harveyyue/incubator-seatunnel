@@ -38,7 +38,7 @@ public class SeatunnelDataWriterFactory<CommitInfoT, StateT> implements DataWrit
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-        org.apache.seatunnel.api.sink.SinkWriter.Context context = new DefaultSinkWriterContext((int) taskId);
+        SinkWriter.Context context = new DefaultSinkWriterContext((int) taskId);
         SinkWriter<SeaTunnelRow, CommitInfoT, StateT> writer;
         SinkCommitter<CommitInfoT> committer;
         try {

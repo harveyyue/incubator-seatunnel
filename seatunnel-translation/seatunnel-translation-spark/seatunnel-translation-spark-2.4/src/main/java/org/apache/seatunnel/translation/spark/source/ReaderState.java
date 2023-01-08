@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.translation.spark.common;
+package org.apache.seatunnel.translation.spark.source;
 
 import org.apache.spark.sql.sources.v2.reader.streaming.PartitionOffset;
 

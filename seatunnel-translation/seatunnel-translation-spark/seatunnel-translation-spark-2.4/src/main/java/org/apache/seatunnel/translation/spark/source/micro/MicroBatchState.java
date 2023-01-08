@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.translation.spark.common.source.micro;
+package org.apache.seatunnel.translation.spark.source.micro;
 
 import org.apache.seatunnel.common.utils.SerializationUtils;
 

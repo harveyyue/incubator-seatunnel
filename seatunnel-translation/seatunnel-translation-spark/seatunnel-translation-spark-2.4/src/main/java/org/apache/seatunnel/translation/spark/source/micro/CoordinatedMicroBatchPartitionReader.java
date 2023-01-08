@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.translation.spark.common.source.micro;
+package org.apache.seatunnel.translation.spark.source.micro;
 
 import org.apache.seatunnel.api.source.Collector;
 import org.apache.seatunnel.api.source.SeaTunnelSource;
@@ -25,7 +25,7 @@ import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.translation.source.BaseSourceFunction;
 import org.apache.seatunnel.translation.source.CoordinatedSource;
 import org.apache.seatunnel.translation.spark.common.InternalRowCollector;
-import org.apache.seatunnel.translation.spark.common.ReaderState;
+import org.apache.seatunnel.translation.spark.source.ReaderState;
 
 import java.io.Serializable;
 import java.util.HashMap;

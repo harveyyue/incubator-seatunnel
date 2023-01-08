@@ -21,7 +21,6 @@ import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.api.source.SupportCoordinate;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.common.utils.SerializationUtils;
-import org.apache.seatunnel.translation.spark.common.source.micro.MicroBatchState;
 import org.apache.seatunnel.translation.spark.common.utils.TypeConverterUtils;
 
 import org.apache.spark.sql.catalyst.InternalRow;

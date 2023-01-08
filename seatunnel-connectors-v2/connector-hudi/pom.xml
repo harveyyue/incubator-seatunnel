@@ -155,7 +155,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.hudi</groupId>
-            <artifactId>hudi-spark3.1-bundle_${scala2.12.binary.version}</artifactId>
+            <artifactId>hudi-spark3.1-bundle_${scala.binary.version}</artifactId>
             <version>${hudi.version}</version>
         </dependency>
         <dependency>

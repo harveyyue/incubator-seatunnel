@@ -17,7 +17,6 @@
 
 package org.apache.seatunnel.spark.transform
 
-import org.apache.seatunnel.apis.base.plugin.Plugin
 import org.apache.seatunnel.common.config.CheckConfigUtil._
 import org.apache.seatunnel.common.config.CheckResult
 import org.apache.seatunnel.spark.{BaseSparkTransform, SparkEnvironment}
@@ -37,7 +36,7 @@ class NullRate extends BaseSparkTransform {
       fl._1 -> env.getSparkSession.sparkContext.longAccumulator(fl._1)
     })
 
-    df.foreachPartition(iter => {
+    df.foreachPartition((iter: Iterator[Row]) => {
       while (iter.hasNext) {
         allCount.add(1L)
         val row = iter.next()
