@@ -27,8 +27,9 @@ public enum JdbcConnectorErrorCode implements SeaTunnelErrorCode {
     XA_OPERATION_FAILED("JDBC-03", "Xa operation failed, such as (commit, rollback) etc.."),
     CONNECT_DATABASE_FAILED("JDBC-04", "Connector database failed"),
     TRANSACTION_OPERATION_FAILED("JDBC-05", "transaction operation failed, such as (commit, rollback) etc.."),
-    NO_SUITABLE_DIALECT_FACTORY("JDBC-06", "No suitable dialect factory found");
-
+    NO_SUITABLE_DIALECT_FACTORY("JDBC-06", "No suitable dialect factory found"),
+    SHOULD_SHARD_COLUMN_WITH_NUMBER_TYPE("JDBC-07", "Should be number data type of shard column"),
+    NO_SUITABLE_SHARD_COLUMN("JDBC-08", "No suitable shard column from source data schema");
 
     private final String code;
 

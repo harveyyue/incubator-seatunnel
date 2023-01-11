@@ -55,6 +55,7 @@ public class JdbcOutputFormat<I, E extends JdbcBatchStatementExecutor<I>>
 
     private final JdbcConnectionOptions jdbcConnectionOptions;
     private final StatementExecutorFactory<E> statementExecutorFactory;
+    private final int batchSize;
 
     private transient E jdbcStatementExecutor;
     private transient int batchCount = 0;
@@ -71,6 +72,11 @@ public class JdbcOutputFormat<I, E extends JdbcBatchStatementExecutor<I>>
         this.connectionProvider = checkNotNull(connectionProvider);
         this.jdbcConnectionOptions = checkNotNull(jdbcConnectionOptions);
         this.statementExecutorFactory = checkNotNull(statementExecutorFactory);
+        if (this.jdbcConnectionOptions.isShardTable()) {
+            this.batchSize = this.jdbcConnectionOptions.getBatchSize() * this.jdbcConnectionOptions.getShardModNumber();
+        } else {
+            this.batchSize = this.jdbcConnectionOptions.getBatchSize();
+        }
     }
 
     /**
@@ -86,7 +92,7 @@ public class JdbcOutputFormat<I, E extends JdbcBatchStatementExecutor<I>>
         }
         jdbcStatementExecutor = createAndOpenStatementExecutor(statementExecutorFactory);
 
-        if (jdbcConnectionOptions.getBatchIntervalMs() != 0 && jdbcConnectionOptions.getBatchSize() != 1) {
+        if (jdbcConnectionOptions.getBatchIntervalMs() != 0 && batchSize != 1) {
             this.scheduler =
                 Executors.newScheduledThreadPool(
                     1, runnable -> {
@@ -137,8 +143,7 @@ public class JdbcOutputFormat<I, E extends JdbcBatchStatementExecutor<I>>
         try {
             addToBatch(record);
             batchCount++;
-            if (jdbcConnectionOptions.getBatchSize() > 0
-                && batchCount >= jdbcConnectionOptions.getBatchSize()) {
+            if (batchSize > 0 && batchCount >= batchSize) {
                 flush();
             }
         } catch (Exception e) {

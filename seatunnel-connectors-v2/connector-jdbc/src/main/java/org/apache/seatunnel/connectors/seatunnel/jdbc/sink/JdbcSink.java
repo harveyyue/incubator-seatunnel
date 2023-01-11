@@ -30,6 +30,8 @@ import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
 import org.apache.seatunnel.common.constants.PluginType;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.config.JdbcSinkOptions;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.exception.JdbcConnectorErrorCode;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.exception.JdbcConnectorException;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.JdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.dialect.JdbcDialect;
@@ -49,6 +51,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @AutoService(SeaTunnelSink.class)
@@ -161,6 +164,21 @@ public class JdbcSink
     @Override
     public void setTypeInfo(SeaTunnelRowType seaTunnelRowType) {
         this.seaTunnelRowType = seaTunnelRowType;
+        if (this.jdbcSinkOptions.getJdbcConnectionOptions().isShardTable()) {
+            String shardColumn = jdbcSinkOptions.getJdbcConnectionOptions().getShardColumn();
+            int shardColumnIndex;
+            try {
+                shardColumnIndex = seaTunnelRowType.indexOf(shardColumn);
+            } catch (RuntimeException ex) {
+                throw new JdbcConnectorException(JdbcConnectorErrorCode.NO_SUITABLE_SHARD_COLUMN, ex.getMessage());
+            }
+            Class clazz = seaTunnelRowType.getFieldType(shardColumnIndex).getTypeClass();
+            if (!(Objects.equals(clazz, Long.class) || Objects.equals(clazz, Integer.class)
+                    || Objects.equals(clazz, Short.class))) {
+                throw new JdbcConnectorException(JdbcConnectorErrorCode.SHOULD_SHARD_COLUMN_WITH_NUMBER_TYPE,
+                        "shard column class=" + clazz.getName());
+            }
+        }
     }
 
     @Override

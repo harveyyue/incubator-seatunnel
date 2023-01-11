@@ -28,6 +28,7 @@ import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.BufferRe
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.BufferedBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.InsertOrUpdateBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.JdbcBatchStatementExecutor;
+import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.ShardBufferedBatchStatementExecutor;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.executor.SimpleBatchStatementExecutor;
 
 import com.google.common.base.Strings;
@@ -35,7 +36,9 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
@@ -55,7 +58,15 @@ public class JdbcOutputFormatBuilder {
 
         final String table = jdbcSinkOptions.getTable();
         final List<String> primaryKeys = jdbcSinkOptions.getPrimaryKeys();
-        if (Strings.isNullOrEmpty(table)) {
+        if (jdbcSinkOptions.getJdbcConnectionOptions().isShardTable()) {
+            statementExecutorFactory = () -> createShardBufferedBatchStatementExecutor(
+                jdbcSinkOptions.getSimpleSQL(),
+                jdbcSinkOptions.getJdbcConnectionOptions().getShardModNumber(),
+                jdbcSinkOptions.getJdbcConnectionOptions().getShardColumn(),
+                jdbcSinkOptions.getJdbcConnectionOptions().getShardSuffixFormat(),
+                seaTunnelRowType,
+                dialect.getRowConverter());
+        } else if (Strings.isNullOrEmpty(table)) {
             statementExecutorFactory = () -> createSimpleBufferedExecutor(
                 jdbcSinkOptions.getSimpleSQL(), seaTunnelRowType, dialect.getRowConverter());
         } else if (primaryKeys == null || primaryKeys.isEmpty()) {
@@ -70,6 +81,21 @@ public class JdbcOutputFormatBuilder {
 
         return new JdbcOutputFormat(connectionProvider,
             jdbcSinkOptions.getJdbcConnectionOptions(), statementExecutorFactory);
+    }
+
+    private static JdbcBatchStatementExecutor<SeaTunnelRow> createShardBufferedBatchStatementExecutor(String sql,
+                                                                                                      int shardModNumber,
+                                                                                                      String shardColumn,
+                                                                                                      String shardTableSuffixFormat,
+                                                                                                      SeaTunnelRowType rowType,
+                                                                                                      JdbcRowConverter rowConverter) {
+        Map<Integer, JdbcBatchStatementExecutor<SeaTunnelRow>> shardStatementExecutors = new HashMap<>();
+        for (int i = 0; i < shardModNumber; i++) {
+            String suffix = String.format(shardTableSuffixFormat, i);
+            String insertSql = String.format(sql, suffix);
+            shardStatementExecutors.put(i, createSimpleExecutor(insertSql, rowType, rowConverter));
+        }
+        return new ShardBufferedBatchStatementExecutor(shardStatementExecutors, Function.identity(), shardModNumber, shardColumn, rowType);
     }
 
     private static JdbcBatchStatementExecutor<SeaTunnelRow> createSimpleBufferedExecutor(JdbcDialect dialect,

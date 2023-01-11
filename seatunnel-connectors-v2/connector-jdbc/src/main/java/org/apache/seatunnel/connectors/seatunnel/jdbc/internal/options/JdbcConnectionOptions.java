@@ -43,6 +43,9 @@ public class JdbcConnectionOptions
     public String query;
     public List<String> prepareSql;
     public List<String> postSql;
+    public String shardColumn;
+    public Integer shardModNumber;
+    public String shardSuffixFormat = JdbcConfig.SHARD_SUFFIX_FORMAT.defaultValue();
     public boolean autoCommit = JdbcConfig.AUTO_COMMIT.defaultValue();
 
     public int batchSize = DEFAULT_BATCH_SIZE;
@@ -99,6 +102,22 @@ public class JdbcConnectionOptions
 
     public List<String> getPostSql() {
         return postSql;
+    }
+
+    public String getShardColumn() {
+        return shardColumn;
+    }
+
+    public Integer getShardModNumber() {
+        return shardModNumber;
+    }
+
+    public String getShardSuffixFormat() {
+        return shardSuffixFormat;
+    }
+
+    public boolean isShardTable() {
+        return shardColumn != null && shardModNumber != null;
     }
 
     public String getXaDataSourceClassName() {

@@ -73,6 +73,12 @@ public class JdbcConfig implements Serializable {
     public static final Option<Boolean> SUPPORT_UPSERT_BY_QUERY_PRIMARY_KEY_EXIST = Options.key("support_upsert_by_query_primary_key_exist")
         .booleanType().defaultValue(false).withDescription("support upsert by query primary_key exist");
 
+    public static final Option<String> SHARD_COLUMN = Options.key("shard_column").stringType().noDefaultValue().withDescription("Write data to shard tables according shard column and mod number");
+
+    public static final Option<Integer> SHARD_MOD_NUMBER = Options.key("shard_mod_number").intType().noDefaultValue().withDescription("Write data to shard tables according shard column and mod number");
+
+    public static final Option<String> SHARD_SUFFIX_FORMAT = Options.key("shard_suffix_format").stringType().defaultValue("%02d").withDescription("Shard table suffix format, default value is %02d");
+
     //source config
     public static final Option<String> PARTITION_COLUMN = Options.key("partition_column").stringType().noDefaultValue().withDescription("partition column");
     public static final Option<String> PARTITION_UPPER_BOUND = Options.key("partition_upper_bound").stringType().noDefaultValue().withDescription("partition upper bound");
@@ -112,6 +118,15 @@ public class JdbcConfig implements Serializable {
         }
         if (config.hasPath(JdbcConfig.POST_SQL.key())) {
             jdbcOptions.postSql = config.getStringList(JdbcConfig.POST_SQL.key());
+        }
+        if (config.hasPath(JdbcConfig.SHARD_COLUMN.key())) {
+            jdbcOptions.shardColumn = config.getString(JdbcConfig.SHARD_COLUMN.key());
+        }
+        if (config.hasPath(JdbcConfig.SHARD_MOD_NUMBER.key())) {
+            jdbcOptions.shardModNumber = config.getInt(JdbcConfig.SHARD_MOD_NUMBER.key());
+        }
+        if (config.hasPath(JdbcConfig.SHARD_SUFFIX_FORMAT.key())) {
+            jdbcOptions.shardSuffixFormat = config.getString(JdbcConfig.SHARD_SUFFIX_FORMAT.key());
         }
 
         if (config.hasPath(JdbcConfig.IS_EXACTLY_ONCE.key()) && config.getBoolean(JdbcConfig.IS_EXACTLY_ONCE.key())) {
