@@ -87,6 +87,9 @@ public class DefaultSeaTunnelRowSerializer implements SeaTunnelRowSerializer<byt
 
     private static SerializationSchema createKeySerializationSchema(List<String> keyFieldNames,
                                                                     SeaTunnelRowType seaTunnelRowType) {
+        if (keyFieldNames == null || keyFieldNames.size() == 0) {
+            return row -> null;
+        }
         int[] keyFieldIndexArr = new int[keyFieldNames.size()];
         SeaTunnelDataType[] keyFieldDataTypeArr = new SeaTunnelDataType[keyFieldNames.size()];
         for (int i = 0; i < keyFieldNames.size(); i++) {
