@@ -136,12 +136,12 @@ public final class TypesafeConfigUtils {
         List<? extends Config> configList = config.getConfigList(configKey);
         Map<String, String> plainValues = decryptConfigs(configList);
         if (plainValues.size() > 0) {
-            log.info("Decrypt path: {}", configKey);
+            log.info("Decrypt path: {}, decrypt {} properties", configKey, plainValues.size());
             configList = configList.stream()
                 .map(m -> {
                     Config result = m;
                     for (Map.Entry<String, String> entry : plainValues.entrySet()) {
-                        result = m.withValue(entry.getKey(), ConfigValueFactory.fromAnyRef(entry.getValue()));
+                        result = result.withValue(entry.getKey(), ConfigValueFactory.fromAnyRef(entry.getValue()));
                     }
                     return result;
                 })
