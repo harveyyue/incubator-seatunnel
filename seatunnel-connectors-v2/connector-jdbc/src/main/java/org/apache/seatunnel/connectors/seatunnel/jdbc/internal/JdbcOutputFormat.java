@@ -249,6 +249,4 @@ public class JdbcOutputFormat<I, E extends JdbcBatchStatementExecutor<I>>
     public interface StatementExecutorFactory<T extends JdbcBatchStatementExecutor<?>>
         extends Supplier<T>, Serializable {
     }
-
-    ;
 }
