@@ -24,6 +24,7 @@ import java.util.List;
 
 public class SeaTunnelRowType implements CompositeType<SeaTunnelRow> {
     private static final long serialVersionUID = 2L;
+    public static final SeaTunnelRowType EMPTY_ROW_TYPE = new SeaTunnelRowType(new String[0], new SeaTunnelDataType[0]);
 
     /**
      * The field name of the {@link SeaTunnelRow}.

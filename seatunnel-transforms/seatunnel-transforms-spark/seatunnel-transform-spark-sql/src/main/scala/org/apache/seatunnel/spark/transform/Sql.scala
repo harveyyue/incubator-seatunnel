@@ -26,7 +26,11 @@ import org.apache.spark.sql.{Dataset, Row}
 class Sql extends BaseSparkTransform {
 
   override def process(data: Dataset[Row], env: SparkEnvironment): Dataset[Row] = {
-    env.getSparkSession.sql(AviatorHelper.parseExpression(config.getString("sql")))
+    if (data.isEmpty) {
+      data
+    } else {
+      env.getSparkSession.sql(AviatorHelper.parseExpression(config.getString("sql")))
+    }
   }
 
   override def checkConfig(): CheckResult = {

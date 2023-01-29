@@ -35,8 +35,11 @@ import org.apache.seatunnel.connectors.seatunnel.file.source.reader.ReadStrategy
 
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 
+@Slf4j
 public abstract class BaseHdfsFileSource extends BaseFileSource {
 
     @Override
@@ -86,11 +89,16 @@ public abstract class BaseHdfsFileSource extends BaseFileSource {
                             "SeaTunnel does not supported this file format");
             }
         } else {
-            try {
-                rowType = readStrategy.getSeaTunnelRowTypeInfo(hadoopConf, filePaths.get(0));
-            } catch (FileConnectorException e) {
-                String errorMsg = String.format("Get table schema from file [%s] failed", filePaths.get(0));
-                throw new FileConnectorException(CommonErrorCode.TABLE_SCHEMA_GET_FAILED, errorMsg, e);
+            if (filePaths.size() > 0) {
+                try {
+                    rowType = readStrategy.getSeaTunnelRowTypeInfo(hadoopConf, filePaths.get(0));
+                } catch (FileConnectorException e) {
+                    String errorMsg = String.format("Get table schema from file [%s] failed", filePaths.get(0));
+                    throw new FileConnectorException(CommonErrorCode.TABLE_SCHEMA_GET_FAILED, errorMsg, e);
+                }
+            } else {
+                log.warn("No files in hdfs path: {}", path);
+                rowType = SeaTunnelRowType.EMPTY_ROW_TYPE;
             }
         }
     }
