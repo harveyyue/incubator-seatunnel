@@ -24,7 +24,6 @@ import com.googlecode.aviator.runtime.function.FunctionUtils;
 import com.googlecode.aviator.runtime.type.AviatorObject;
 import com.googlecode.aviator.runtime.type.AviatorString;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 public class HourFunction extends AbstractFunction {
@@ -34,7 +33,7 @@ public class HourFunction extends AbstractFunction {
      */
     @Override
     public AviatorObject call(Map<String, Object> env) {
-        return new AviatorString(String.valueOf(LocalDateTime.now().getHour()));
+        return new AviatorString(AviatorDateUtils.currentHour());
     }
 
     /**

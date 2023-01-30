@@ -43,28 +43,28 @@ public class AviatorDateUtils {
     public static final Map<String, String> DATE_FORMAT_MAPPINGS = new HashMap<>();
 
     static {
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{year\\}).*"), "year()");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{year([+-]?[0-9]+)\\}).*"), "year(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month\\}).*"), "month()");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+)\\}).*"), "month(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+):(.*)\\}).*"), "month(%s, %s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month\\.(start|end)\\}).*"), "month(0, %s, 0, 'yyyyMMdd')");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+)\\.(start|end)([+-]?[0-9]+):(.*)\\}).*"), "month(%s, %s, %s, %s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{week\\}).*"), "week()");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{week\\.(start|end)\\}).*"), "week(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{week\\.(start|end):(.*)\\}).*"), "week(%s, %s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{date\\}).*"), "date()");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{date([+-]?[0-9]+)\\}).*"), "date(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{hour\\}).*"), "hour()");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{hour([+-]?[0-9]+)\\}).*"), "hour(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{hour([+-]?[0-9]+):(.*)\\}).*"), "hour(%s, %s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{minute\\}).*"), "minute()");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{minute([+-]?[0-9]+)\\}).*"), "minute(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{minute([+-]?[0-9]+):(.*)\\}).*"), "minute(%s, %s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter\\}).*"), "quarter()");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter([+-]?[0-9]+)\\}).*"), "quarter(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter\\.(start|end)\\}).*"), "quarter(%s, 0, 'yyyyMMdd')");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter\\.(start|end)([+-]?[0-9]+):(.*)\\}).*"), "quarter(%s, %s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{year\\}).*", Pattern.DOTALL), "year()");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{year([+-]?[0-9]+)\\}).*", Pattern.DOTALL), "year(%s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month\\}).*", Pattern.DOTALL), "month()");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+)\\}).*", Pattern.DOTALL), "month(%s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+):([ymdhi-]+)\\}).*", Pattern.DOTALL), "month(%s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month\\.(start|end)\\}).*", Pattern.DOTALL), "month(0, %s, 0, 'yyyyMMdd')");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+)\\.(start|end)([+-]?[0-9]+):([ymdhi-]+)\\}).*", Pattern.DOTALL), "month(%s, %s, %s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{week\\}).*", Pattern.DOTALL), "week()");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{week\\.(start|end)\\}).*", Pattern.DOTALL), "week(%s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{week\\.(start|end):([ymdhi-]+)\\}).*", Pattern.DOTALL), "week(%s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{date\\}).*", Pattern.DOTALL), "date()");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{date([+-]?[0-9]+)\\}).*", Pattern.DOTALL), "date(%s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{hour\\}).*", Pattern.DOTALL), "hour()");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{hour([+-]?[0-9]+)\\}).*", Pattern.DOTALL), "hour(%s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{hour([+-]?[0-9]+):([ymdhi-]+)\\}).*", Pattern.DOTALL), "hour(%s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{minute\\}).*", Pattern.DOTALL), "minute()");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{minute([+-]?[0-9]+)\\}).*", Pattern.DOTALL), "minute(%s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{minute([+-]?[0-9]+):([ymdhi-]+)\\}).*", Pattern.DOTALL), "minute(%s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter\\}).*", Pattern.DOTALL), "quarter()");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter([+-]?[0-9]+)\\}).*", Pattern.DOTALL), "quarter(%s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter\\.(start|end)\\}).*", Pattern.DOTALL), "quarter(%s, 0, 'yyyyMMdd')");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter\\.(start|end)([+-]?[0-9]+):([ymdhi-]+)\\}).*", Pattern.DOTALL), "quarter(%s, %s, %s)");
 
         // format mappings
         DATE_FORMAT_MAPPINGS.put("y-m", MONTH_STRIKE_PATTERN);
@@ -91,8 +91,12 @@ public class AviatorDateUtils {
         return DateFormatUtils.format(calendar.getTime(), pattern);
     }
 
+    public static String currentHour() {
+        return String.format("%02d", LocalDateTime.now().getHour());
+    }
+
     public static String addHour(int number) {
-        return String.valueOf(LocalDateTime.now().plusHours(number).getHour());
+        return String.format("%02d", LocalDateTime.now().plusHours(number).getHour());
     }
 
     public static String addHour(int number, String pattern) {
@@ -101,8 +105,12 @@ public class AviatorDateUtils {
         return DateFormatUtils.format(calendar.getTime(), pattern);
     }
 
+    public static String currentMinute() {
+        return String.format("%02d", LocalDateTime.now().getMinute());
+    }
+
     public static String addMinute(int number) {
-        return String.valueOf(LocalDateTime.now().plusMinutes(number).getMinute());
+        return String.format("%02d", LocalDateTime.now().plusMinutes(number).getMinute());
     }
 
     public static String addMinute(int number, String pattern) {
@@ -113,7 +121,7 @@ public class AviatorDateUtils {
 
     public static String weekOfYear() {
         Calendar calendar = Calendar.getInstance();
-        return calendar.getWeekYear() + "" + calendar.get(Calendar.WEEK_OF_YEAR);
+        return calendar.getWeekYear() + String.format("%02d", calendar.get(Calendar.WEEK_OF_YEAR));
     }
 
     /**
