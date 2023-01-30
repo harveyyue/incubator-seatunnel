@@ -23,6 +23,7 @@ import static org.apache.seatunnel.connectors.seatunnel.hive.config.HiveConfig.T
 import static org.apache.hadoop.fs.CommonConfigurationKeysPublic.FS_DEFAULT_NAME_KEY;
 
 import org.apache.seatunnel.api.common.PrepareFailException;
+import org.apache.seatunnel.api.common.SeaTunnelAPIErrorCode;
 import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.common.config.CheckConfigUtil;
 import org.apache.seatunnel.common.config.CheckResult;
@@ -43,6 +44,7 @@ import org.apache.hadoop.hive.metastore.api.Table;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 @AutoService(SeaTunnelSource.class)
 public class HiveSource extends BaseHdfsFileSource {
@@ -85,6 +87,26 @@ public class HiveSource extends BaseHdfsFileSource {
                 String errorMsg = String.format("Get hdfs namenode host from table location [%s] failed," +
                         "please check it", hdfsLocation);
                 throw new HiveConnectorException(HiveConnectorErrorCode.GET_HDFS_NAMENODE_HOST_FAILED, errorMsg, e);
+            }
+        }
+        if (pluginConfig.hasPath(BaseSourceConfig.READ_PARTITIONS.key())) {
+            // verify partition list
+            List<String> partitionsList = pluginConfig.getStringList(BaseSourceConfig.READ_PARTITIONS.key());
+            if (partitionsList.isEmpty()) {
+                throw new HiveConnectorException(SeaTunnelAPIErrorCode.CONFIG_VALIDATION_FAILED,
+                        "Partitions list is empty, please check");
+            }
+            int depth = partitionsList.get(0)
+                    .replaceAll("\\\\", "/")
+                    .split("/").length;
+            long count = partitionsList.stream()
+                    .map(partition ->
+                            partition.replaceAll("\\\\", "/").split("/").length)
+                    .filter(length -> length != depth)
+                    .count();
+            if (count > 0) {
+                throw new HiveConnectorException(SeaTunnelAPIErrorCode.CONFIG_VALIDATION_FAILED,
+                        "Every partition that in partition list should has the same directory depth");
             }
         }
         super.prepare(pluginConfig);
