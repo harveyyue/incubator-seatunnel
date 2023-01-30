@@ -47,24 +47,24 @@ public class AviatorDateUtils {
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{year([+-]?[0-9]+)\\}).*"), "year(%s)");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month\\}).*"), "month()");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+)\\}).*"), "month(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+):(.*)\\}).*"), "month(%s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+):([ymdhi-]+)\\}).*"), "month(%s, %s)");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month\\.(start|end)\\}).*"), "month(0, %s, 0, 'yyyyMMdd')");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+)\\.(start|end)([+-]?[0-9]+):(.*)\\}).*"), "month(%s, %s, %s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{month([+-]?[0-9]+)\\.(start|end)([+-]?[0-9]+):([ymdhi-]+)\\}).*"), "month(%s, %s, %s, %s)");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{week\\}).*"), "week()");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{week\\.(start|end)\\}).*"), "week(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{week\\.(start|end):(.*)\\}).*"), "week(%s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{week\\.(start|end):([ymdhi-]+)\\}).*"), "week(%s, %s)");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{date\\}).*"), "date()");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{date([+-]?[0-9]+)\\}).*"), "date(%s)");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{hour\\}).*"), "hour()");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{hour([+-]?[0-9]+)\\}).*"), "hour(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{hour([+-]?[0-9]+):(.*)\\}).*"), "hour(%s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{hour([+-]?[0-9]+):([ymdhi-]+)\\}).*"), "hour(%s, %s)");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{minute\\}).*"), "minute()");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{minute([+-]?[0-9]+)\\}).*"), "minute(%s)");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{minute([+-]?[0-9]+):(.*)\\}).*"), "minute(%s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{minute([+-]?[0-9]+):([ymdhi-]+)\\}).*"), "minute(%s, %s)");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter\\}).*"), "quarter()");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter([+-]?[0-9]+)\\}).*"), "quarter(%s)");
         DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter\\.(start|end)\\}).*"), "quarter(%s, 0, 'yyyyMMdd')");
-        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter\\.(start|end)([+-]?[0-9]+):(.*)\\}).*"), "quarter(%s, %s, %s)");
+        DATE_FUNCTION_PATTERNS.put(Pattern.compile(".*(\\$\\{quarter\\.(start|end)([+-]?[0-9]+):([ymdhi-]+)\\}).*"), "quarter(%s, %s, %s)");
 
         // format mappings
         DATE_FORMAT_MAPPINGS.put("y-m", MONTH_STRIKE_PATTERN);

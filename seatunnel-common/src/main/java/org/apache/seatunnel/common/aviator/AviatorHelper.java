@@ -40,7 +40,10 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class AviatorHelper {
+    public static final Pattern FUNCTION_PATTERN = Pattern.compile(".*(\\$\\{.*\\}).*");
+
     static {
+        // register aviator functions
         AviatorEvaluator.addFunction(new YearFunction());
         AviatorEvaluator.addFunction(new QuarterFunction());
         AviatorEvaluator.addFunction(new MonthFunction());
@@ -50,12 +53,20 @@ public class AviatorHelper {
         AviatorEvaluator.addFunction(new MinuteFunction());
     }
 
+    /**
+     * Execute aviator function
+     * @param functionExpression function name, e.g: month(1, 'yyyy-MM')
+     * @return return the result of {@link Object} type
+     */
     public static Object execute(String functionExpression) {
         return AviatorEvaluator.execute(functionExpression);
     }
 
     public static Map<String, String> executeAviatorFunction(String expression) {
         Map<String, String> functions = new HashMap<>();
+        if (!isAviatorFunction(expression)) {
+            return functions;
+        }
         for (Map.Entry<Pattern, String> entry : DATE_FUNCTION_PATTERNS.entrySet()) {
             Matcher matcher = entry.getKey().matcher(expression);
             if (matcher.matches()) {
@@ -100,5 +111,12 @@ public class AviatorHelper {
             log.info("parse expression from {} to {}", expression, result);
         }
         return result;
+    }
+
+    /**
+     * Validate the expression whether contains aviator function, e.g: ${month+1:y-m}
+     */
+    public static boolean isAviatorFunction(String expression) {
+        return FUNCTION_PATTERN.matcher(expression).matches();
     }
 }
