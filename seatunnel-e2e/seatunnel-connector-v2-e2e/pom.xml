@@ -44,6 +44,7 @@
         <module>connector-iotdb-e2e</module>
         <module>connector-cdc-mysql-e2e</module>
         <module>connector-tdengine-e2e</module>
+        <module>connector-selectdb-cloud-e2e</module>
         <module>connector-hbase-e2e</module>
     </modules>
 
