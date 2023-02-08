@@ -178,4 +178,12 @@ public final class TypesafeConfigUtils {
         pluginConfig.entrySet().forEach(entry -> result.put(entry.getKey(), entry.getValue().unwrapped().toString()));
         return result;
     }
+
+    public static Map<String, String> configToMap(Config config) {
+        Map<String, String> configMap = new HashMap<>();
+        config.entrySet().forEach(entry -> {
+            configMap.put(entry.getKey(), entry.getValue().unwrapped().toString());
+        });
+        return configMap;
+    }
 }

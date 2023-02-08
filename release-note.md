@@ -10,6 +10,11 @@
 ### Transformer
 - [Spark] Support transform-v2 for spark (#3409)
 - [ALL]Add FieldMapper Transform #3781
+### Connectors
+- [Elasticsearch] Support https protocol & compatible with opensearch
+- [Hbase] Add hbase sink connector #4049
+### Formats
+- [Canal]Support read canal format message #3950
 
 ## Improves
 ### Connectors
