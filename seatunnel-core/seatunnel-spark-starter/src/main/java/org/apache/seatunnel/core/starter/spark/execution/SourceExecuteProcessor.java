@@ -21,6 +21,7 @@ import org.apache.seatunnel.api.common.JobContext;
 import org.apache.seatunnel.api.env.EnvCommonOptions;
 import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.api.source.SourceCommonOptions;
+import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
 import org.apache.seatunnel.common.Constants;
 import org.apache.seatunnel.common.utils.SerializationUtils;
 import org.apache.seatunnel.plugin.discovery.PluginIdentifier;
@@ -31,6 +32,8 @@ import org.apache.seatunnel.translation.spark.common.utils.TypeConverterUtils;
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
 import com.google.common.collect.Lists;
+import org.apache.spark.sql.Column;
+import org.apache.spark.sql.ColumnName;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.StructType;
@@ -40,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class SourceExecuteProcessor extends AbstractPluginExecuteProcessor<SeaTunnelSource<?, ?, ?>> {
 
@@ -56,6 +60,10 @@ public class SourceExecuteProcessor extends AbstractPluginExecuteProcessor<SeaTu
         List<Dataset<Row>> sources = new ArrayList<>();
         for (int i = 0; i < plugins.size(); i++) {
             SeaTunnelSource<?, ?, ?> source = plugins.get(i);
+            if (source.getProducedType() instanceof SeaTunnelRowType
+                    && ((SeaTunnelRowType) source.getProducedType()).getFieldNames().length == 0) {
+                continue;
+            }
             Config pluginConfig = pluginConfigs.get(i);
             int parallelism;
             if (pluginConfig.hasPath(SourceCommonOptions.PARALLELISM.key())) {
@@ -76,6 +84,17 @@ public class SourceExecuteProcessor extends AbstractPluginExecuteProcessor<SeaTu
                 .option(SourceCommonOptions.RECORD_SPEED.key(), recordSpeed)
                 .option(Constants.SOURCE_SERIALIZATION, SerializationUtils.objectToString(source))
                 .schema((StructType) TypeConverterUtils.convert(source.getProducedType())).load();
+            if (pluginConfig.hasPath(SourceCommonOptions.REPARTITION.key())
+                    && pluginConfig.getBoolean(SourceCommonOptions.REPARTITION.key())) {
+                if (pluginConfig.hasPath(SourceCommonOptions.REPARTITION_COLUMNS.key())
+                        && pluginConfig.getStringList(SourceCommonOptions.REPARTITION_COLUMNS.key()).size() > 0) {
+                    List<Column> columns = pluginConfig.getStringList(SourceCommonOptions.REPARTITION_COLUMNS.key())
+                        .stream().map(ColumnName::new).collect(Collectors.toList());
+                    dataset = dataset.repartition(parallelism, columns.toArray(new Column[0]));
+                } else {
+                    dataset = dataset.repartition(parallelism);
+                }
+            }
             sources.add(dataset);
             registerInputTempView(pluginConfigs.get(i), dataset);
         }

@@ -58,6 +58,9 @@ public class SparkExecution implements TaskExecution {
     public void execute() throws TaskExecuteException {
         List<Dataset<Row>> datasets = new ArrayList<>();
         datasets = sourcePluginExecuteProcessor.execute(datasets);
+        if (datasets.size() == 0) {
+            return;
+        }
         datasets = transformPluginExecuteProcessor.execute(datasets);
         sinkPluginExecuteProcessor.execute(datasets);
 

@@ -20,6 +20,8 @@ package org.apache.seatunnel.api.source;
 import org.apache.seatunnel.api.configuration.Option;
 import org.apache.seatunnel.api.configuration.Options;
 
+import java.util.List;
+
 public class SourceCommonOptions {
 
     public static final Option<String> RESULT_TABLE_NAME =
@@ -44,9 +46,22 @@ public class SourceCommonOptions {
                 "When parallelism is specified, it will override the parallelism in env.");
 
     public static final Option<Integer> RECORD_SPEED =
-            Options.key("record_speed")
-                    .intType()
-                    .defaultValue(-1)
-                    .withDescription("When record_speed is not specified, don't do any limit in sink side." +
-                            "When record_speed is specified, it will limit with record speed numbers in sink side.");
+        Options.key("record_speed")
+            .intType()
+            .defaultValue(-1)
+            .withDescription("When record_speed is not specified, don't do any limit in sink side." +
+                "When record_speed is specified, it will limit with record speed numbers in sink side.");
+
+    public static final Option<Boolean> REPARTITION =
+        Options.key("repartition")
+            .booleanType()
+            .defaultValue(false)
+            .withDescription("Specify whether to repartition the data set (dataStream/dataset).");
+
+    public static final Option<List<String>> REPARTITION_COLUMNS =
+        Options.key("repartition_columns")
+            .listType()
+            .noDefaultValue()
+            .withDescription("Specify source columns from data set (dataStream/dataset) when enable repartition option, " +
+                "if not set will repartition data randomly.");
 }
