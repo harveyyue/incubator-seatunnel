@@ -77,7 +77,7 @@ public class JdbcConfig implements Serializable {
 
     public static final Option<Integer> SHARD_MOD_NUMBER = Options.key("shard_mod_number").intType().noDefaultValue().withDescription("Write data to shard tables according shard column and mod number");
 
-    public static final Option<String> SHARD_SUFFIX_FORMAT = Options.key("shard_suffix_format").stringType().defaultValue("%02d").withDescription("Shard table suffix format, default value is %02d");
+    public static final Option<String> SHARD_SUFFIX_FORMAT = Options.key("shard_suffix_format").stringType().defaultValue("_%02d").withDescription("Shard table suffix format, default value is _%02d");
 
     //source config
     public static final Option<String> PARTITION_COLUMN = Options.key("partition_column").stringType().noDefaultValue().withDescription("partition column");

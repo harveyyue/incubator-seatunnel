@@ -91,7 +91,10 @@ public class JdbcOutputFormatBuilder {
                                                                                                       JdbcRowConverter rowConverter) {
         Map<Integer, JdbcBatchStatementExecutor<SeaTunnelRow>> shardStatementExecutors = new HashMap<>();
         for (int i = 0; i < shardModNumber; i++) {
+            // get the shard table suffix, default format is "_%02d"
             String suffix = String.format(shardTableSuffixFormat, i);
+            // insert shard table statement:
+            // insert into tbl%s(id, c1) values(?, ?) on duplicate key update id=values(id), c1=values(c1)
             String insertSql = String.format(sql, suffix);
             shardStatementExecutors.put(i, createSimpleExecutor(insertSql, rowType, rowConverter));
         }
