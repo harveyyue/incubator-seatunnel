@@ -149,6 +149,6 @@ public class DorisSinkManager {
         if (!Strings.isNullOrEmpty(sinkConfig.getLabelPrefix())) {
             labelPrefix = sinkConfig.getLabelPrefix();
         }
-        return String.format("%s%s", labelPrefix, UUID.randomUUID().toString());
+        return String.format("%s%s", labelPrefix, UUID.randomUUID());
     }
 }

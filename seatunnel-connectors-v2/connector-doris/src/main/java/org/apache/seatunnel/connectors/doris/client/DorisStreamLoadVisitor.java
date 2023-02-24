@@ -64,16 +64,18 @@ public class DorisStreamLoadVisitor {
             throw new DorisConnectorException(CommonErrorCode.ILLEGAL_ARGUMENT, "None of the host in `load_url` could be connected.");
         }
         String loadUrl = String.format("%s/api/%s/%s/_stream_load", host, sinkConfig.getDatabase(), sinkConfig.getTable());
+        Map<String, String> headers = getStreamLoadHttpHeader(flushData.getLabel());
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Start to join batch data: rows[%d] bytes[%d] label[%s].", flushData.getRows().size(), flushData.getBytes(), flushData.getLabel()));
+            log.debug("Start to join batch data: rows[{}] bytes[{}] label[{}] headers[{}].",
+                flushData.getRows().size(), flushData.getBytes(), flushData.getLabel(), headers);
         }
-        Map<String, Object> loadResult = httpHelper.doHttpPut(loadUrl, joinRows(flushData.getRows(), flushData.getBytes().intValue()), getStreamLoadHttpHeader(flushData.getLabel()));
+        Map<String, Object> loadResult = httpHelper.doHttpPut(loadUrl, joinRows(flushData.getRows(), flushData.getBytes().intValue()), headers);
         final String keyStatus = "Status";
         if (null == loadResult || !loadResult.containsKey(keyStatus)) {
             throw new DorisConnectorException(CommonErrorCode.FLUSH_DATA_FAILED, "Unable to flush data to Doris: unknown result status. " + loadResult);
         }
         if (log.isDebugEnabled()) {
-            log.debug(String.format("StreamLoad response:\n%s"), JsonUtils.toJsonString(loadResult));
+            log.debug("StreamLoad response:\n{}", JsonUtils.toJsonString(loadResult));
         }
         if (RESULT_FAILED.equals(loadResult.get(keyStatus))) {
             String errorMsg = "Failed to flush data to Doris.\n";
@@ -94,7 +96,7 @@ public class DorisStreamLoadVisitor {
             throw new DorisConnectorException(CommonErrorCode.FLUSH_DATA_FAILED,
                     String.format("%s%s%s", errorMsg, message, errorURL));
         } else if (RESULT_LABEL_EXISTED.equals(loadResult.get(keyStatus))) {
-            log.debug(String.format("StreamLoad response:\n%s"), JsonUtils.toJsonString(loadResult));
+            log.debug("StreamLoad response:\n{}", JsonUtils.toJsonString(loadResult));
             // has to block-checking the state to get the final result
             checkLabelState(host, flushData.getLabel());
         }
@@ -116,7 +118,7 @@ public class DorisStreamLoadVisitor {
     private byte[] joinRows(List<byte[]> rows, int totalBytes) {
         if (SinkConfig.StreamLoadFormat.CSV.equals(sinkConfig.getLoadFormat())) {
             Map<String, String> props = sinkConfig.getStreamLoadProps();
-            byte[] lineDelimiter = DelimiterParserUtil.parse((String) props.get("row_delimiter"), "\n").getBytes(StandardCharsets.UTF_8);
+            byte[] lineDelimiter = DelimiterParserUtil.parse(props.get("row_delimiter"), "\n").getBytes(StandardCharsets.UTF_8);
             ByteBuffer bos = ByteBuffer.allocate(totalBytes + rows.size() * lineDelimiter.length);
             for (byte[] row : rows) {
                 bos.put(row);
@@ -194,7 +196,7 @@ public class DorisStreamLoadVisitor {
     private Map<String, String> getStreamLoadHttpHeader(String label) {
         Map<String, String> headerMap = new HashMap<>();
         if (null != fieldNames && !fieldNames.isEmpty() && SinkConfig.StreamLoadFormat.CSV.equals(sinkConfig.getLoadFormat())) {
-            headerMap.put("columns", String.join(",", fieldNames.stream().map(f -> String.format("`%s`", f)).collect(Collectors.toList())));
+            headerMap.put("columns", fieldNames.stream().map(f -> String.format("`%s`", f)).collect(Collectors.joining(",")));
         }
         if (null != sinkConfig.getStreamLoadProps()) {
             for (Map.Entry<String, String> entry : sinkConfig.getStreamLoadProps().entrySet()) {

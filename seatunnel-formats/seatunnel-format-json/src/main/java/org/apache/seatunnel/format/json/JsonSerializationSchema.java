@@ -26,10 +26,13 @@ import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
 import org.apache.seatunnel.common.exception.CommonErrorCode;
 import org.apache.seatunnel.format.json.exception.SeaTunnelJsonFormatException;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class JsonSerializationSchema implements SerializationSchema {
 
     /**
@@ -42,7 +45,8 @@ public class JsonSerializationSchema implements SerializationSchema {
 
     /** Object mapper that is used to create output JSON objects. */
     @Getter
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper()
+        .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true);
 
     private final RowToJsonConverters.RowToJsonConverter runtimeConverter;
 

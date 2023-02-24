@@ -109,7 +109,7 @@ public class SinkConfig {
     public enum StreamLoadFormat {
         CSV, JSON;
         public static StreamLoadFormat parse(String format) {
-            if (StreamLoadFormat.JSON.name().equals(format)) {
+            if (StreamLoadFormat.JSON.name().equalsIgnoreCase(format)) {
                 return JSON;
             }
             return CSV;
