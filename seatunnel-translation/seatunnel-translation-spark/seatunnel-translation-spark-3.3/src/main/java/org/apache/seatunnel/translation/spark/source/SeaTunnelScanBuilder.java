@@ -19,31 +19,24 @@ package org.apache.seatunnel.translation.spark.source;
 
 import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
-import org.apache.seatunnel.translation.spark.common.utils.TypeConverterUtils;
 
-import org.apache.spark.sql.connector.read.Batch;
 import org.apache.spark.sql.connector.read.Scan;
-import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.connector.read.ScanBuilder;
 
-public class SeatunnelScan implements Scan {
+public class SeaTunnelScanBuilder implements ScanBuilder {
 
     private final SeaTunnelSource<SeaTunnelRow, ?, ?> source;
     private final Integer parallelism;
     private final Integer recordSpeed;
 
-    public SeatunnelScan(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
+    public SeaTunnelScanBuilder(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
         this.recordSpeed = recordSpeed;
     }
 
     @Override
-    public StructType readSchema() {
-        return (StructType) TypeConverterUtils.convert(source.getProducedType());
-    }
-
-    @Override
-    public Batch toBatch() {
-        return new SeatunnelBatch(source, parallelism, recordSpeed);
+    public Scan build() {
+        return new SeaTunnelScan(source, parallelism, recordSpeed);
     }
 }

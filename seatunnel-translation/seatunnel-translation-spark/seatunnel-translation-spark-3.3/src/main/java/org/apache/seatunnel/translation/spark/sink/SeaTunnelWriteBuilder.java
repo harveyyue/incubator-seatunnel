@@ -25,24 +25,28 @@ import org.apache.spark.sql.connector.write.WriteBuilder;
 
 import java.io.IOException;
 
-public class SeatunnelWriteBuilder<StateT, CommitInfoT, AggregatedCommitInfoT> implements WriteBuilder {
+public class SeaTunnelWriteBuilder<StateT, CommitInfoT, AggregatedCommitInfoT> implements WriteBuilder {
 
     private final SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, AggregatedCommitInfoT> sink;
 
-    public SeatunnelWriteBuilder(SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, AggregatedCommitInfoT> sink) {
+    public SeaTunnelWriteBuilder(SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, AggregatedCommitInfoT> sink) {
         this.sink = sink;
     }
 
-    // Spark 3.3.0
-    // @Override
-    // public Write build() {
-    //     return new SeatunnelWrite<>(sink);
-    // }
-
+    /**
+     * The method build() is for Spark 3.3.0
+     * @Override
+     * public Write build() {
+     *     return new SeaTunnelWrite<>(sink);
+     * }
+     *
+     * The method buildForBatch() is for Spark 3.1.x
+     * @return return the SeatTunnel batch write
+     */
     @Override
     public BatchWrite buildForBatch() {
         try {
-            return new SeatunnelBatchWrite<>(sink);
+            return new SeaTunnelBatchWrite<>(sink);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

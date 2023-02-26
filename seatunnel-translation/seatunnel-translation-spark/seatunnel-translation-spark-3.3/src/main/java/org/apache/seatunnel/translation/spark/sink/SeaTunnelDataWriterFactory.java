@@ -29,10 +29,10 @@ import org.apache.spark.sql.connector.write.DataWriterFactory;
 
 import java.io.IOException;
 
-public class SeatunnelDataWriterFactory<CommitInfoT, StateT> implements DataWriterFactory {
+public class SeaTunnelDataWriterFactory<CommitInfoT, StateT> implements DataWriterFactory {
     private final SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, ?> sink;
 
-    public SeatunnelDataWriterFactory(SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, ?> sink) {
+    public SeaTunnelDataWriterFactory(SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, ?> sink) {
         this.sink = sink;
     }
 
@@ -51,9 +51,6 @@ public class SeatunnelDataWriterFactory<CommitInfoT, StateT> implements DataWrit
         } catch (IOException e) {
             throw new RuntimeException("Failed to create SinkCommitter.", e);
         }
-
-        SparkDataWriter<CommitInfoT, StateT> sparkDataWriter =
-                new SparkDataWriter<>(writer, committer, sink.getConsumedType(), 0);
-        return new SeatunnelDataWriter<>(sparkDataWriter);
+        return new SeaTunnelDataWriter<>(writer, committer, sink.getConsumedType(), 0);
     }
 }

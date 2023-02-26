@@ -28,7 +28,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.Map;
 
-public class SeatunnelSource implements DataSourceRegister, TableProvider, SparkSinkService {
+public class SeaTunnelTableProvider implements DataSourceRegister, TableProvider, SparkSinkService {
 
     @Override
     public String shortName() {
@@ -42,7 +42,7 @@ public class SeatunnelSource implements DataSourceRegister, TableProvider, Spark
 
     @Override
     public Table getTable(StructType schema, Transform[] partitioning, Map<String, String> properties) {
-        return new SeatunnelTable(properties);
+        return new SeaTunnelTable(properties);
     }
 
     @Override

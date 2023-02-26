@@ -19,11 +19,11 @@ package org.apache.seatunnel.translation.spark.source;
 
 import org.apache.spark.sql.connector.read.InputPartition;
 
-public class SeatunnelInputPartition implements InputPartition {
+public class SeaTunnelInputPartition implements InputPartition {
 
     private final Integer subtaskId;
 
-    public SeatunnelInputPartition(Integer subtaskId) {
+    public SeaTunnelInputPartition(Integer subtaskId) {
         this.subtaskId = subtaskId;
     }
 

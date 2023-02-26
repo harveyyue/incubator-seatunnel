@@ -39,7 +39,7 @@ public class SparkSinkInjector {
 
     private static final String SPARK_SINK_CLASS_NAME = loadSparkSink();
 
-    private static String loadSparkSink() {
+    public static String loadSparkSink() {
         Iterator<SparkSinkService> iterator = ServiceLoader
                 .load(SparkSinkService.class, Thread.currentThread().getContextClassLoader()).iterator();
         List<SparkSinkService> list = new ArrayList<>();

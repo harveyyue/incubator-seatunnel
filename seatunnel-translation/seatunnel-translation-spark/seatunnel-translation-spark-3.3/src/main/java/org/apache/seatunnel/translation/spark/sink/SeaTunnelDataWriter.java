@@ -25,6 +25,8 @@ import org.apache.seatunnel.translation.serialization.RowConverter;
 import org.apache.seatunnel.translation.spark.common.serialization.InternalRowConverter;
 
 import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.connector.write.DataWriter;
+import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
 import javax.annotation.Nullable;
 
@@ -32,7 +34,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 
-public class SparkDataWriter<CommitInfoT, StateT> {
+public class SeaTunnelDataWriter<CommitInfoT, StateT> implements DataWriter<InternalRow> {
 
     private final SinkWriter<SeaTunnelRow, CommitInfoT, StateT> sinkWriter;
 
@@ -42,20 +44,23 @@ public class SparkDataWriter<CommitInfoT, StateT> {
     private CommitInfoT latestCommitInfoT;
     private long epochId;
 
-    public SparkDataWriter(SinkWriter<SeaTunnelRow, CommitInfoT, StateT> sinkWriter,
-                           @Nullable SinkCommitter<CommitInfoT> sinkCommitter,
-                           SeaTunnelDataType<?> dataType, long epochId) {
+    public SeaTunnelDataWriter(SinkWriter<SeaTunnelRow, CommitInfoT, StateT> sinkWriter,
+                               @Nullable SinkCommitter<CommitInfoT> sinkCommitter,
+                               SeaTunnelDataType<?> dataType,
+                               long epochId) {
         this.sinkWriter = sinkWriter;
         this.sinkCommitter = sinkCommitter;
         this.rowConverter = new InternalRowConverter(dataType);
         this.epochId = epochId == 0 ? 1 : epochId;
     }
 
+    @Override
     public void write(InternalRow record) throws IOException {
         sinkWriter.write(rowConverter.reconvert(record));
     }
 
-    public SparkWriterCommitMessage<CommitInfoT> commit() throws IOException {
+    @Override
+    public WriterCommitMessage commit() throws IOException {
         // We combine the prepareCommit and commit in this method.
         // If this method fails, we need to rollback the transaction in the abort method.
         // 1. prepareCommit fails:
@@ -78,6 +83,7 @@ public class SparkDataWriter<CommitInfoT, StateT> {
         return sparkWriterCommitMessage;
     }
 
+    @Override
     public void abort() throws IOException {
         sinkWriter.abortPrepare();
         if (sinkCommitter != null) {
@@ -88,6 +94,10 @@ public class SparkDataWriter<CommitInfoT, StateT> {
             }
         }
         cleanCommitInfo();
+    }
+
+    @Override
+    public void close() throws IOException {
     }
 
     private void cleanCommitInfo() {

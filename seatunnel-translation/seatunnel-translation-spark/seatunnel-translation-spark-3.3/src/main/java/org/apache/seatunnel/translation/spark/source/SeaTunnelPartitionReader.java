@@ -15,39 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.seatunnel.translation.spark.sink;
+package org.apache.seatunnel.translation.spark.source;
+
+import org.apache.seatunnel.translation.spark.common.source.batch.ParallelBatchPartitionReader;
 
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.connector.write.DataWriter;
-import org.apache.spark.sql.connector.write.WriterCommitMessage;
+import org.apache.spark.sql.connector.read.PartitionReader;
 
 import java.io.IOException;
 
-public class SeatunnelDataWriter<CommitInfoT, StateT> implements DataWriter<InternalRow> {
+public class SeaTunnelPartitionReader implements PartitionReader<InternalRow> {
 
-    private final SparkDataWriter<CommitInfoT, StateT> sparkDataWriter;
+    private final ParallelBatchPartitionReader partitionReader;
 
-    public SeatunnelDataWriter(SparkDataWriter<CommitInfoT, StateT> sparkDataWriter) {
-        this.sparkDataWriter = sparkDataWriter;
+    public SeaTunnelPartitionReader(ParallelBatchPartitionReader partitionReader) {
+        this.partitionReader = partitionReader;
     }
 
     @Override
-    public void write(InternalRow record) throws IOException {
-        sparkDataWriter.write(record);
+    public boolean next() throws IOException {
+        return partitionReader.next();
     }
 
     @Override
-    public WriterCommitMessage commit() throws IOException {
-        return sparkDataWriter.commit();
-    }
-
-    @Override
-    public void abort() throws IOException {
-        sparkDataWriter.abort();
+    public InternalRow get() {
+        return partitionReader.get();
     }
 
     @Override
     public void close() throws IOException {
-
+        partitionReader.close();
     }
 }

@@ -36,21 +36,21 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class SeatunnelBatchWrite<StateT, CommitInfoT, AggregatedCommitInfoT> implements BatchWrite {
+public class SeaTunnelBatchWrite<StateT, CommitInfoT, AggregatedCommitInfoT> implements BatchWrite {
 
     protected final SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, AggregatedCommitInfoT> sink;
 
     @Nullable
     protected final SinkAggregatedCommitter<CommitInfoT, AggregatedCommitInfoT> sinkAggregatedCommitter;
 
-    public SeatunnelBatchWrite(SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, AggregatedCommitInfoT> sink) throws IOException {
+    public SeaTunnelBatchWrite(SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, AggregatedCommitInfoT> sink) throws IOException {
         this.sink = sink;
         this.sinkAggregatedCommitter = sink.createAggregatedCommitter().orElse(null);
     }
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-        return new SeatunnelDataWriterFactory<>(sink);
+        return new SeaTunnelDataWriterFactory<>(sink);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class SeatunnelBatchWrite<StateT, CommitInfoT, AggregatedCommitInfoT> imp
     }
 
     /**
-     * {@link SparkDataWriter#commit()}
+     * {@link SeaTunnelDataWriter#commit()}
      */
     @SuppressWarnings("unchecked")
     private @Nonnull List<AggregatedCommitInfoT> combineCommitMessage(WriterCommitMessage[] messages) {

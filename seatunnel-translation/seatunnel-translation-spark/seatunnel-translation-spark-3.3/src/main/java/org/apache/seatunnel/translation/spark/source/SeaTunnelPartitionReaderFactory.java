@@ -20,40 +20,36 @@ package org.apache.seatunnel.translation.spark.source;
 import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.api.source.SupportCoordinate;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
+import org.apache.seatunnel.translation.spark.common.source.batch.CoordinatedBatchPartitionReader;
+import org.apache.seatunnel.translation.spark.common.source.batch.ParallelBatchPartitionReader;
 
-import org.apache.spark.sql.connector.read.Batch;
+import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.connector.read.InputPartition;
+import org.apache.spark.sql.connector.read.PartitionReader;
 import org.apache.spark.sql.connector.read.PartitionReaderFactory;
 
-public class SeatunnelBatch implements Batch {
+public class SeaTunnelPartitionReaderFactory implements PartitionReaderFactory {
 
     private final SeaTunnelSource<SeaTunnelRow, ?, ?> source;
     private final Integer parallelism;
     private final Integer recordSpeed;
 
-    public SeatunnelBatch(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
+    public SeaTunnelPartitionReaderFactory(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
         this.recordSpeed = recordSpeed;
     }
 
     @Override
-    public InputPartition[] planInputPartitions() {
-        InputPartition[] partitions;
+    public PartitionReader<InternalRow> createReader(InputPartition partition) {
+        SeaTunnelInputPartition seatunnelInputPartition = (SeaTunnelInputPartition) partition;
+        Integer subTaskId = seatunnelInputPartition.getSubtaskId();
+        ParallelBatchPartitionReader partitionReader;
         if (source instanceof SupportCoordinate) {
-            partitions = new SeatunnelInputPartition[1];
-            partitions[0] = new SeatunnelInputPartition(0);
+            partitionReader = new CoordinatedBatchPartitionReader(source, parallelism, subTaskId, recordSpeed);
         } else {
-            partitions = new SeatunnelInputPartition[parallelism];
-            for (int subtaskId = 0; subtaskId < parallelism; subtaskId++) {
-                partitions[subtaskId] = new SeatunnelInputPartition(subtaskId);
-            }
+            partitionReader = new ParallelBatchPartitionReader(source, parallelism, subTaskId, recordSpeed);
         }
-        return partitions;
-    }
-
-    @Override
-    public PartitionReaderFactory createReaderFactory() {
-        return new SeatunnelPartitionReaderFactory(source, parallelism, recordSpeed);
+        return new SeaTunnelPartitionReader(partitionReader);
     }
 }

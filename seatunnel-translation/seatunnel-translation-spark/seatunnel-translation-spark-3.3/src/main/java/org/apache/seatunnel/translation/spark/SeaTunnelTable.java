@@ -25,8 +25,8 @@ import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.common.Constants;
 import org.apache.seatunnel.common.utils.SerializationUtils;
 import org.apache.seatunnel.translation.spark.common.utils.TypeConverterUtils;
-import org.apache.seatunnel.translation.spark.sink.SeatunnelWriteBuilder;
-import org.apache.seatunnel.translation.spark.source.SeatunnelScanBuilder;
+import org.apache.seatunnel.translation.spark.sink.SeaTunnelWriteBuilder;
+import org.apache.seatunnel.translation.spark.source.SeaTunnelScanBuilder;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
@@ -43,11 +43,11 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Map;
 import java.util.Set;
 
-public class SeatunnelTable implements Table, SupportsRead, SupportsWrite {
+public class SeaTunnelTable implements Table, SupportsRead, SupportsWrite {
 
     private final Map<String, String> properties;
 
-    public SeatunnelTable(Map<String, String> properties) {
+    public SeaTunnelTable(Map<String, String> properties) {
         this.properties = properties;
     }
 
@@ -60,7 +60,7 @@ public class SeatunnelTable implements Table, SupportsRead, SupportsWrite {
         SeaTunnelSource<SeaTunnelRow, ?, ?> seaTunnelSource = SerializationUtils.stringToObject(source);
         int parallelism = Integer.parseInt(options.getOrDefault(SourceCommonOptions.PARALLELISM.key(), "1"));
         int recordSpeed = Integer.parseInt(options.getOrDefault(SourceCommonOptions.RECORD_SPEED.key(), "-1"));
-        return new SeatunnelScanBuilder(seaTunnelSource, parallelism, recordSpeed);
+        return new SeaTunnelScanBuilder(seaTunnelSource, parallelism, recordSpeed);
     }
 
     @Override
@@ -95,6 +95,6 @@ public class SeatunnelTable implements Table, SupportsRead, SupportsWrite {
     public WriteBuilder newWriteBuilder(LogicalWriteInfo info) {
         SeaTunnelSink<SeaTunnelRow, ?, ?, ?> sink = SerializationUtils.stringToObject(
                 info.options().get(Constants.SINK));
-        return new SeatunnelWriteBuilder<>(sink);
+        return new SeaTunnelWriteBuilder<>(sink);
     }
 }

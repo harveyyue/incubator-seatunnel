@@ -18,25 +18,42 @@
 package org.apache.seatunnel.translation.spark.source;
 
 import org.apache.seatunnel.api.source.SeaTunnelSource;
+import org.apache.seatunnel.api.source.SupportCoordinate;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 
-import org.apache.spark.sql.connector.read.Scan;
-import org.apache.spark.sql.connector.read.ScanBuilder;
+import org.apache.spark.sql.connector.read.Batch;
+import org.apache.spark.sql.connector.read.InputPartition;
+import org.apache.spark.sql.connector.read.PartitionReaderFactory;
 
-public class SeatunnelScanBuilder implements ScanBuilder {
+public class SeaTunnelBatch implements Batch {
 
     private final SeaTunnelSource<SeaTunnelRow, ?, ?> source;
     private final Integer parallelism;
     private final Integer recordSpeed;
 
-    public SeatunnelScanBuilder(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
+    public SeaTunnelBatch(SeaTunnelSource<SeaTunnelRow, ?, ?> source, Integer parallelism, Integer recordSpeed) {
         this.source = source;
         this.parallelism = parallelism;
         this.recordSpeed = recordSpeed;
     }
 
     @Override
-    public Scan build() {
-        return new SeatunnelScan(source, parallelism, recordSpeed);
+    public InputPartition[] planInputPartitions() {
+        InputPartition[] partitions;
+        if (source instanceof SupportCoordinate) {
+            partitions = new SeaTunnelInputPartition[1];
+            partitions[0] = new SeaTunnelInputPartition(0);
+        } else {
+            partitions = new SeaTunnelInputPartition[parallelism];
+            for (int subtaskId = 0; subtaskId < parallelism; subtaskId++) {
+                partitions[subtaskId] = new SeaTunnelInputPartition(subtaskId);
+            }
+        }
+        return partitions;
+    }
+
+    @Override
+    public PartitionReaderFactory createReaderFactory() {
+        return new SeaTunnelPartitionReaderFactory(source, parallelism, recordSpeed);
     }
 }

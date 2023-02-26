@@ -25,18 +25,18 @@
 //
 //import java.io.IOException;
 //
-//public class SeatunnelWrite<StateT, CommitInfoT, AggregatedCommitInfoT> implements Write {
+//public class SeaTunnelWrite<StateT, CommitInfoT, AggregatedCommitInfoT> implements Write {
 //
 //    private final SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, AggregatedCommitInfoT> sink;
 //
-//    public SeatunnelWrite(SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, AggregatedCommitInfoT> sink) {
+//    public SeaTunnelWrite(SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, AggregatedCommitInfoT> sink) {
 //        this.sink = sink;
 //    }
 //
 //    @Override
 //    public BatchWrite toBatch() {
 //        try {
-//            return new SeatunnelBatchWrite<>(sink);
+//            return new SeaTunnelBatchWrite<>(sink);
 //        } catch (IOException e) {
 //            throw new RuntimeException(e);
 //        }

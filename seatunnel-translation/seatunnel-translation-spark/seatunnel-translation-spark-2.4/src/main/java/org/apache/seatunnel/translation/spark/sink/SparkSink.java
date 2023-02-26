@@ -21,6 +21,7 @@ import org.apache.seatunnel.api.sink.SeaTunnelSink;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.common.Constants;
 import org.apache.seatunnel.common.utils.SerializationUtils;
+import org.apache.seatunnel.translation.spark.common.sink.SparkSinkService;
 
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
@@ -36,7 +37,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 public class SparkSink<StateT, CommitInfoT, AggregatedCommitInfoT> implements WriteSupport,
-    StreamWriteSupport, DataSourceV2 {
+    StreamWriteSupport, DataSourceV2, SparkSinkService {
 
     private volatile SeaTunnelSink<SeaTunnelRow, StateT, CommitInfoT, AggregatedCommitInfoT> sink;
 
