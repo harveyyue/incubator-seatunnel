@@ -33,6 +33,9 @@ import org.apache.seatunnel.translation.spark.common.utils.TypeConverterUtils;
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.spark.sql.Column;
+import org.apache.spark.sql.ColumnName;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SaveMode;
@@ -42,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class SinkExecuteProcessor extends AbstractPluginExecuteProcessor<SeaTunnelSink<?, ?, ?, ?>> {
 
     private static final String PLUGIN_TYPE = "sink";
@@ -94,6 +98,29 @@ public class SinkExecuteProcessor extends AbstractPluginExecuteProcessor<SeaTunn
                     .option("checkpointLocation", "/tmp")
                     .mode(saveMode)
                     .save();
+            // process partition metadata to hive table
+            if (seaTunnelSink.getPluginName().equals("Hive")) {
+                if (sinkConfig.hasPath(SinkCommonOptions.PARTITION_BY.key())) {
+                    List<String> columnNames = sinkConfig.getStringList(SinkCommonOptions.PARTITION_BY.key());
+                    List<Column> columns = columnNames.stream().map(ColumnName::new).collect(Collectors.toList());
+                    String partitionSpec = dataset.select(columns.toArray(new Column[0])).distinct()
+                        .collectAsList().stream().map(row -> {
+                            List<String> kv = new ArrayList<>();
+                            for (int j = 0; j < columnNames.size(); j++) {
+                                kv.add(String.format("%s='%s'", columnNames.get(j), row.get(j).toString()));
+                            }
+                            return String.format("PARTITION (%s)", kv.stream().collect(Collectors.joining(", ")));
+                        })
+                        .collect(Collectors.joining(" "));
+                    log.info("Add these partitions: {}", partitionSpec);
+
+                    // alter table
+                    String fullTableName = sinkConfig.getString("table_name");
+                    String alterPartitions = String.format("ALTER TABLE %s ADD IF NOT EXISTS %s", fullTableName, partitionSpec);
+                    log.info("Alter table ddl: {}", alterPartitions);
+                    sparkEnvironment.getSparkSession().sql(alterPartitions);
+                }
+            }
         }
         for (int i = 0; i < plugins.size(); i++) {
             plugins.get(i).post(pluginConfigs.get(i));

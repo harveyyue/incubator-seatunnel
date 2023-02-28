@@ -20,6 +20,8 @@ package org.apache.seatunnel.api.sink;
 import org.apache.seatunnel.api.configuration.Option;
 import org.apache.seatunnel.api.configuration.Options;
 
+import java.util.List;
+
 public class SinkCommonOptions {
 
     public static final Option<String> SOURCE_TABLE_NAME =
@@ -37,4 +39,10 @@ public class SinkCommonOptions {
             .defaultValue(1)
             .withDescription("When parallelism is not specified, the parallelism in env is used by default. " +
                 "When parallelism is specified, it will override the parallelism in env.");
+
+    public static final Option<List<String>> PARTITION_BY =
+        Options.key("partition_by")
+            .listType()
+            .noDefaultValue()
+            .withDescription("Partition keys list, only used when have_partition is true in hive sink connector");
 }

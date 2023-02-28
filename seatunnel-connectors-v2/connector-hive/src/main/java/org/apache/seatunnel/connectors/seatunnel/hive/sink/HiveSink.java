@@ -77,59 +77,68 @@ public class HiveSink extends BaseHdfsFileSink {
 
     @Override
     public void prepare(Config pluginConfig) throws PrepareFailException {
-        CheckResult result = CheckConfigUtil.checkAllExists(pluginConfig, HiveConfig.METASTORE_URI.key(),
-                HiveConfig.TABLE_NAME.key());
+        // set default hive sink config
+        pluginConfig = pluginConfig
+                .withValue(IS_PARTITION_FIELD_WRITE_IN_FILE.key(), ConfigValueFactory.fromAnyRef(false))
+                .withValue(FILE_NAME_EXPRESSION.key(), ConfigValueFactory.fromAnyRef("${transactionId}"));
+
+        // validate the hive full table name
+        CheckResult result = CheckConfigUtil.checkAllExists(pluginConfig, HiveConfig.TABLE_NAME.key());
         if (!result.isSuccess()) {
             throw new HiveConnectorException(SeaTunnelAPIErrorCode.CONFIG_VALIDATION_FAILED,
                     String.format("PluginName: %s, PluginType: %s, Message: %s",
                             getPluginName(), PluginType.SINK, result.getMsg()));
         }
-        if (pluginConfig.hasPath(BaseSinkConfig.PARTITION_DIR_EXPRESSION.key())) {
-            throw new HiveConnectorException(SeaTunnelAPIErrorCode.CONFIG_VALIDATION_FAILED, String.format(
-                    "Hive sink connector does not support setting %s", BaseSinkConfig.PARTITION_DIR_EXPRESSION.key()
-            ));
-        }
-        Pair<String[], Table> tableInfo = HiveConfig.getTableInfo(pluginConfig);
-        dbName = tableInfo.getLeft()[0];
-        tableName = tableInfo.getLeft()[1];
-        tableInformation = tableInfo.getRight();
-        List<String> sinkFields = tableInformation.getSd().getCols().stream()
-                .map(FieldSchema::getName)
-                .collect(Collectors.toList());
-        List<String> partitionKeys = tableInformation.getPartitionKeys().stream()
-                .map(FieldSchema::getName)
-                .collect(Collectors.toList());
-        sinkFields.addAll(partitionKeys);
-        String outputFormat = tableInformation.getSd().getOutputFormat();
-        if (TEXT_OUTPUT_FORMAT_CLASSNAME.equals(outputFormat)) {
-            Map<String, String> parameters = tableInformation.getSd().getSerdeInfo().getParameters();
-            pluginConfig = pluginConfig.withValue(FILE_FORMAT.key(), ConfigValueFactory.fromAnyRef(FileFormat.TEXT.toString()))
-                .withValue(FIELD_DELIMITER.key(), ConfigValueFactory.fromAnyRef(parameters.get("field.delim")))
-                .withValue(ROW_DELIMITER.key(), ConfigValueFactory.fromAnyRef(parameters.get("line.delim")));
-        } else if (PARQUET_OUTPUT_FORMAT_CLASSNAME.equals(outputFormat)) {
-            pluginConfig = pluginConfig.withValue(FILE_FORMAT.key(), ConfigValueFactory.fromAnyRef(FileFormat.PARQUET.toString()));
-        } else if (ORC_OUTPUT_FORMAT_CLASSNAME.equals(outputFormat)) {
-            pluginConfig = pluginConfig.withValue(FILE_FORMAT.key(), ConfigValueFactory.fromAnyRef(FileFormat.ORC.toString()));
+        // using origin metastore uri
+        result = CheckConfigUtil.checkAllExists(pluginConfig, HiveConfig.METASTORE_URI.key());
+        if (result.isSuccess()) {
+            if (pluginConfig.hasPath(BaseSinkConfig.PARTITION_DIR_EXPRESSION.key())) {
+                throw new HiveConnectorException(SeaTunnelAPIErrorCode.CONFIG_VALIDATION_FAILED, String.format(
+                        "Hive sink connector does not support setting %s", BaseSinkConfig.PARTITION_DIR_EXPRESSION.key()
+                ));
+            }
+            Pair<String[], Table> tableInfo = HiveConfig.getTableInfo(pluginConfig);
+            dbName = tableInfo.getLeft()[0];
+            tableName = tableInfo.getLeft()[1];
+            tableInformation = tableInfo.getRight();
+            List<String> sinkFields = tableInformation.getSd().getCols().stream()
+                    .map(FieldSchema::getName)
+                    .collect(Collectors.toList());
+            List<String> partitionKeys = tableInformation.getPartitionKeys().stream()
+                    .map(FieldSchema::getName)
+                    .collect(Collectors.toList());
+            sinkFields.addAll(partitionKeys);
+            String outputFormat = tableInformation.getSd().getOutputFormat();
+            if (TEXT_OUTPUT_FORMAT_CLASSNAME.equals(outputFormat)) {
+                Map<String, String> parameters = tableInformation.getSd().getSerdeInfo().getParameters();
+                pluginConfig = pluginConfig.withValue(FILE_FORMAT.key(), ConfigValueFactory.fromAnyRef(FileFormat.TEXT.toString()))
+                        .withValue(FIELD_DELIMITER.key(), ConfigValueFactory.fromAnyRef(parameters.get("field.delim")))
+                        .withValue(ROW_DELIMITER.key(), ConfigValueFactory.fromAnyRef(parameters.get("line.delim")));
+            } else if (PARQUET_OUTPUT_FORMAT_CLASSNAME.equals(outputFormat)) {
+                pluginConfig = pluginConfig.withValue(FILE_FORMAT.key(), ConfigValueFactory.fromAnyRef(FileFormat.PARQUET.toString()));
+            } else if (ORC_OUTPUT_FORMAT_CLASSNAME.equals(outputFormat)) {
+                pluginConfig = pluginConfig.withValue(FILE_FORMAT.key(), ConfigValueFactory.fromAnyRef(FileFormat.ORC.toString()));
+            } else {
+                throw new HiveConnectorException(CommonErrorCode.ILLEGAL_ARGUMENT,
+                        "Hive connector only support [text parquet orc] table now");
+            }
+            pluginConfig = pluginConfig
+                    .withValue(FILE_PATH.key(), ConfigValueFactory.fromAnyRef(tableInformation.getSd().getLocation()))
+                    .withValue(SINK_COLUMNS.key(), ConfigValueFactory.fromAnyRef(sinkFields))
+                    .withValue(PARTITION_BY.key(), ConfigValueFactory.fromAnyRef(partitionKeys));
+            String hdfsLocation = tableInformation.getSd().getLocation();
+            try {
+                URI uri = new URI(hdfsLocation);
+                String path = uri.getPath();
+                pluginConfig = pluginConfig.withValue(FILE_PATH.key(), ConfigValueFactory.fromAnyRef(path));
+                hadoopConf = new HadoopConf(hdfsLocation.replace(path, ""));
+            } catch (URISyntaxException e) {
+                String errorMsg = String.format("Get hdfs namenode host from table location [%s] failed," +
+                        "please check it", hdfsLocation);
+                throw new HiveConnectorException(HiveConnectorErrorCode.GET_HDFS_NAMENODE_HOST_FAILED, errorMsg, e);
+            }
         } else {
-            throw new HiveConnectorException(CommonErrorCode.ILLEGAL_ARGUMENT,
-                    "Hive connector only support [text parquet orc] table now");
-        }
-        pluginConfig = pluginConfig
-                .withValue(IS_PARTITION_FIELD_WRITE_IN_FILE.key(), ConfigValueFactory.fromAnyRef(false))
-                .withValue(FILE_NAME_EXPRESSION.key(), ConfigValueFactory.fromAnyRef("${transactionId}"))
-                .withValue(FILE_PATH.key(), ConfigValueFactory.fromAnyRef(tableInformation.getSd().getLocation()))
-                .withValue(SINK_COLUMNS.key(), ConfigValueFactory.fromAnyRef(sinkFields))
-                .withValue(PARTITION_BY.key(), ConfigValueFactory.fromAnyRef(partitionKeys));
-        String hdfsLocation = tableInformation.getSd().getLocation();
-        try {
-            URI uri = new URI(hdfsLocation);
-            String path = uri.getPath();
-            pluginConfig = pluginConfig.withValue(FILE_PATH.key(), ConfigValueFactory.fromAnyRef(path));
-            hadoopConf = new HadoopConf(hdfsLocation.replace(path, ""));
-        } catch (URISyntaxException e) {
-            String errorMsg = String.format("Get hdfs namenode host from table location [%s] failed," +
-                    "please check it", hdfsLocation);
-            throw new HiveConnectorException(HiveConnectorErrorCode.GET_HDFS_NAMENODE_HOST_FAILED, errorMsg, e);
+            super.prepare(pluginConfig);
         }
         this.pluginConfig = pluginConfig;
     }
