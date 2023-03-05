@@ -17,7 +17,8 @@
 
 package org.apache.seatunnel.connectors.seatunnel.hudi.source;
 
-import static org.apache.seatunnel.connectors.seatunnel.hudi.config.HudiSourceConfig.CONF_FILES;
+import static org.apache.seatunnel.connectors.seatunnel.file.config.BaseSourceConfig.READ_PARTITIONS;
+import static org.apache.seatunnel.connectors.seatunnel.file.hdfs.source.config.HdfsSourceConfig.DEFAULT_FS;
 import static org.apache.seatunnel.connectors.seatunnel.hudi.config.HudiSourceConfig.KERBEROS_PRINCIPAL;
 import static org.apache.seatunnel.connectors.seatunnel.hudi.config.HudiSourceConfig.KERBEROS_PRINCIPAL_FILE;
 import static org.apache.seatunnel.connectors.seatunnel.hudi.config.HudiSourceConfig.TABLE_PATH;
@@ -36,6 +37,8 @@ import org.apache.seatunnel.common.config.CheckConfigUtil;
 import org.apache.seatunnel.common.config.CheckResult;
 import org.apache.seatunnel.common.constants.PluginType;
 import org.apache.seatunnel.common.exception.CommonErrorCode;
+import org.apache.seatunnel.connectors.seatunnel.file.config.HadoopConf;
+import org.apache.seatunnel.connectors.seatunnel.file.source.reader.ParquetReadStrategy;
 import org.apache.seatunnel.connectors.seatunnel.hudi.exception.HudiConnectorException;
 import org.apache.seatunnel.connectors.seatunnel.hudi.util.HudiUtil;
 
@@ -44,6 +47,9 @@ import org.apache.seatunnel.shade.com.typesafe.config.Config;
 import com.google.auto.service.AutoService;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @AutoService(SeaTunnelSource.class)
 public class HudiSource implements SeaTunnelSource<SeaTunnelRow, HudiSourceSplit, HudiSourceState> {
@@ -54,9 +60,9 @@ public class HudiSource implements SeaTunnelSource<SeaTunnelRow, HudiSourceSplit
 
     private String tablePath;
 
-    private String confFiles;
-
     private boolean useKerberos = false;
+    private HadoopConf hadoopConf;
+    private List<String> readPartitions = new ArrayList<>();
 
     @Override
     public String getPluginName() {
@@ -65,7 +71,7 @@ public class HudiSource implements SeaTunnelSource<SeaTunnelRow, HudiSourceSplit
 
     @Override
     public void prepare(Config pluginConfig) {
-        CheckResult result = CheckConfigUtil.checkAllExists(pluginConfig, TABLE_PATH.key(), CONF_FILES.key());
+        CheckResult result = CheckConfigUtil.checkAllExists(pluginConfig, TABLE_PATH.key(), DEFAULT_FS.key());
         if (!result.isSuccess()) {
             throw new HudiConnectorException(SeaTunnelAPIErrorCode.CONFIG_VALIDATION_FAILED,
                 String.format("PluginName: %s, PluginType: %s, Message: %s",
@@ -82,7 +88,7 @@ public class HudiSource implements SeaTunnelSource<SeaTunnelRow, HudiSourceSplit
             );
         }
         try {
-            this.confFiles = pluginConfig.getString(CONF_FILES.key());
+            this.hadoopConf = new HadoopConf(pluginConfig.getString(DEFAULT_FS.key()));
             this.tablePath = pluginConfig.getString(TABLE_PATH.key());
             if (CheckConfigUtil.isValidParam(pluginConfig, USE_KERBEROS.key())) {
                 this.useKerberos = pluginConfig.getBoolean(USE_KERBEROS.key());
@@ -94,16 +100,29 @@ public class HudiSource implements SeaTunnelSource<SeaTunnelRow, HudiSourceSplit
                                 getPluginName(), PluginType.SOURCE, result.getMsg())
                         );
                     }
-                    HudiUtil.initKerberosAuthentication(HudiUtil.getConfiguration(this.confFiles), pluginConfig.getString(KERBEROS_PRINCIPAL.key()), pluginConfig.getString(KERBEROS_PRINCIPAL_FILE.key()));
+                    HudiUtil.initKerberosAuthentication(HudiUtil.getConfiguration(this.hadoopConf), pluginConfig.getString(KERBEROS_PRINCIPAL.key()), pluginConfig.getString(KERBEROS_PRINCIPAL_FILE.key()));
                 }
             }
-            this.filePath = HudiUtil.getParquetFileByPath(this.confFiles, tablePath);
+            this.filePath = HudiUtil.getParquetFileByPath(this.hadoopConf, tablePath);
             if (this.filePath == null) {
                 throw new HudiConnectorException(CommonErrorCode.FILE_OPERATION_FAILED,
                     String.format("%s has no parquet file, please check!", tablePath));
             }
             // should read from config or read from hudi metadata( wait catalog done)
-            this.typeInfo = HudiUtil.getSeaTunnelRowTypeInfo(this.confFiles, this.filePath);
+            ParquetReadStrategy parquetReadStrategy = new ParquetReadStrategy();
+            parquetReadStrategy.setPluginConfig(pluginConfig);
+            this.typeInfo = parquetReadStrategy.getSeaTunnelRowTypeInfo(this.hadoopConf, this.filePath);
+
+            if (pluginConfig.hasPath(READ_PARTITIONS.key())) {
+                this.readPartitions = pluginConfig.getStringList(READ_PARTITIONS.key()).stream()
+                    .map(part -> {
+                        if (part.endsWith("/")) {
+                            return part.substring(0, part.length() - 1);
+                        }
+                        return part;
+                    })
+                    .collect(Collectors.toList());
+            }
         } catch (HudiConnectorException | IOException e) {
             throw new HudiConnectorException(SeaTunnelAPIErrorCode.CONFIG_VALIDATION_FAILED,
                 String.format("PluginName: %s, PluginType: %s, Message: %s",
@@ -119,7 +138,7 @@ public class HudiSource implements SeaTunnelSource<SeaTunnelRow, HudiSourceSplit
 
     @Override
     public SourceReader<SeaTunnelRow, HudiSourceSplit> createReader(SourceReader.Context readerContext) throws Exception {
-        return new HudiSourceReader(this.confFiles, readerContext, typeInfo);
+        return new HudiSourceReader(this.hadoopConf, readerContext, typeInfo);
     }
 
     @Override
@@ -132,12 +151,12 @@ public class HudiSource implements SeaTunnelSource<SeaTunnelRow, HudiSourceSplit
 
     @Override
     public SourceSplitEnumerator<HudiSourceSplit, HudiSourceState> createEnumerator(SourceSplitEnumerator.Context<HudiSourceSplit> enumeratorContext) throws Exception {
-        return new HudiSourceSplitEnumerator(enumeratorContext, tablePath, this.confFiles);
+        return new HudiSourceSplitEnumerator(enumeratorContext, tablePath, hadoopConf, readPartitions);
     }
 
     @Override
     public SourceSplitEnumerator<HudiSourceSplit, HudiSourceState> restoreEnumerator(SourceSplitEnumerator.Context<HudiSourceSplit> enumeratorContext, HudiSourceState checkpointState) throws Exception {
-        return new HudiSourceSplitEnumerator(enumeratorContext, tablePath, this.confFiles, checkpointState);
+        return new HudiSourceSplitEnumerator(enumeratorContext, tablePath, hadoopConf, readPartitions, checkpointState);
     }
 
 }

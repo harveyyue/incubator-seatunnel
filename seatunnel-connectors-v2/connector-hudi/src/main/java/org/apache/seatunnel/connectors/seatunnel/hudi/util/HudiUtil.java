@@ -23,9 +23,11 @@ import org.apache.seatunnel.api.table.type.BasicType;
 import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
 import org.apache.seatunnel.common.exception.CommonErrorCode;
+import org.apache.seatunnel.connectors.seatunnel.file.config.HadoopConf;
 import org.apache.seatunnel.connectors.seatunnel.hudi.exception.HudiConnectorException;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -36,24 +38,26 @@ import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.schema.MessageType;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 public class HudiUtil {
 
-    public static Configuration getConfiguration(String confPaths) {
+    public static Configuration getConfiguration(HadoopConf hadoopConf) {
         Configuration configuration = new Configuration();
-        Arrays.stream(confPaths.split(";")).forEach(file -> configuration.addResource(new Path(file)));
+        // Arrays.stream(confPaths.split(";")).forEach(file -> configuration.addResource(new Path(file)));
+        configuration.set(CommonConfigurationKeys.FS_DEFAULT_NAME_KEY, hadoopConf.getHdfsNameKey());
+        configuration.set(String.format("fs.%s.impl", hadoopConf.getSchema()), hadoopConf.getFsHdfsImpl());
+        hadoopConf.setExtraOptionsForConfiguration(configuration);
         return configuration;
     }
 
-    public static String getParquetFileByPath(String confPaths, String path) throws IOException {
-        Configuration configuration = getConfiguration(confPaths);
+    public static String getParquetFileByPath(HadoopConf hadoopConf, String path) throws IOException {
+        Configuration configuration = getConfiguration(hadoopConf);
         FileSystem hdfs = FileSystem.get(configuration);
         Path listFiles = new Path(path);
         FileStatus[] stats = hdfs.listStatus(listFiles);
         for (FileStatus fileStatus : stats) {
             if (fileStatus.isDirectory()) {
-                String filePath = getParquetFileByPath(confPaths, fileStatus.getPath().toString());
+                String filePath = getParquetFileByPath(hadoopConf, fileStatus.getPath().toString());
                 if (filePath == null) {
                     continue;
                 } else {
@@ -69,15 +73,15 @@ public class HudiUtil {
         return null;
     }
 
-    public static SeaTunnelRowType getSeaTunnelRowTypeInfo(String confPaths, String path) throws HudiConnectorException {
-        Configuration configuration = getConfiguration(confPaths);
+    public static SeaTunnelRowType getSeaTunnelRowTypeInfo(HadoopConf hadoopConf, String path) throws HudiConnectorException {
+        Configuration configuration = getConfiguration(hadoopConf);
         Path dstDir = new Path(path);
         ParquetMetadata footer;
         try {
             footer = ParquetFileReader.readFooter(configuration, dstDir, NO_FILTER);
         } catch (IOException e) {
-            throw new HudiConnectorException(CommonErrorCode.TABLE_SCHEMA_GET_FAILED,
-                "Create ParquetMetadata Fail!", e);
+            throw new HudiConnectorException(
+                    CommonErrorCode.TABLE_SCHEMA_GET_FAILED, "Create ParquetMetadata Fail!", e);
         }
         MessageType schema = footer.getFileMetaData().getSchema();
         String[] fields = new String[schema.getFields().size()];

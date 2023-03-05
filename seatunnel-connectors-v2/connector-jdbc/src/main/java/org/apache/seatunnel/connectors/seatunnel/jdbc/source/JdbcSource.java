@@ -24,6 +24,7 @@ import org.apache.seatunnel.api.source.SeaTunnelSource;
 import org.apache.seatunnel.api.source.SourceReader;
 import org.apache.seatunnel.api.source.SourceSplitEnumerator;
 import org.apache.seatunnel.api.table.type.BasicType;
+import org.apache.seatunnel.api.table.type.DecimalType;
 import org.apache.seatunnel.api.table.type.SeaTunnelDataType;
 import org.apache.seatunnel.api.table.type.SeaTunnelRow;
 import org.apache.seatunnel.api.table.type.SeaTunnelRowType;
@@ -190,7 +191,7 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
     }
 
     private boolean isNumericType(SeaTunnelDataType<?> type) {
-        return type.equals(BasicType.INT_TYPE) || type.equals(BasicType.LONG_TYPE);
+        return type.equals(BasicType.INT_TYPE) || type.equals(BasicType.LONG_TYPE) || type instanceof DecimalType;
     }
 
 }

@@ -19,17 +19,27 @@ package org.apache.seatunnel.connectors.seatunnel.hudi.source;
 
 import org.apache.seatunnel.api.source.SourceSplitEnumerator;
 import org.apache.seatunnel.common.config.Common;
+import org.apache.seatunnel.connectors.seatunnel.file.config.HadoopConf;
+import org.apache.seatunnel.connectors.seatunnel.hudi.exception.HudiConnectorErrorCode;
+import org.apache.seatunnel.connectors.seatunnel.hudi.exception.HudiConnectorException;
 import org.apache.seatunnel.connectors.seatunnel.hudi.util.HudiUtil;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hudi.common.fs.FSUtils;
+import org.apache.hudi.common.table.HoodieTableConfig;
+import org.apache.hudi.common.util.Option;
 import org.apache.hudi.hadoop.HoodieParquetInputFormat;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,25 +47,36 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+@Slf4j
 public class HudiSourceSplitEnumerator implements SourceSplitEnumerator<HudiSourceSplit, HudiSourceState> {
 
+    private static final String HUDI_METADATA_FOLDER = ".hoodie";
     private final Context<HudiSourceSplit> context;
     private Set<HudiSourceSplit> pendingSplit;
     private Set<HudiSourceSplit> assignedSplit;
     private final String tablePath;
-    private final String confPaths;
+    private final HadoopConf hadoopConf;
+    private final List<String> readPartitions;
 
-    public HudiSourceSplitEnumerator(SourceSplitEnumerator.Context<HudiSourceSplit> context, String tablePath, String confPaths) {
+    public HudiSourceSplitEnumerator(SourceSplitEnumerator.Context<HudiSourceSplit> context,
+                                     String tablePath,
+                                     HadoopConf hadoopConf,
+                                     List<String> readPartitions) {
         this.context = context;
         this.tablePath = tablePath;
-        this.confPaths = confPaths;
+        this.hadoopConf = hadoopConf;
+        this.readPartitions = readPartitions;
     }
 
-    public HudiSourceSplitEnumerator(SourceSplitEnumerator.Context<HudiSourceSplit> context, String tablePath,
-                                     String confPaths,
+    public HudiSourceSplitEnumerator(SourceSplitEnumerator.Context<HudiSourceSplit> context,
+                                     String tablePath,
+                                     HadoopConf hadoopConf,
+                                     List<String> readPartitions,
                                      HudiSourceState sourceState) {
-        this(context, tablePath, confPaths);
+        this(context, tablePath, hadoopConf, readPartitions);
         this.assignedSplit = sourceState.getAssignedSplit();
     }
 
@@ -73,16 +94,66 @@ public class HudiSourceSplitEnumerator implements SourceSplitEnumerator<HudiSour
 
     private Set<HudiSourceSplit> getHudiSplit() throws IOException {
         Set<HudiSourceSplit> hudiSourceSplits = new HashSet<>();
-        Path path = new Path(tablePath);
-        Configuration configuration = HudiUtil.getConfiguration(confPaths);
+        String commaSeparatedPaths = tablePath;
+        FileSystem fs =  FSUtils.getFs(tablePath, HudiUtil.getConfiguration(hadoopConf));
+        Option<String[]> partitionFields = getPartitionFields(fs, tablePath);
+        if (partitionFields.isPresent() && partitionFields.get().length > 0) {
+            Pattern partitionPattern = getPartitionPattern(partitionFields.get());
+            List<String> partitionPaths = getPartitionPaths(fs, tablePath, partitionPattern);
+            if (partitionPaths.isEmpty()) {
+                throw new HudiConnectorException(HudiConnectorErrorCode.NO_SUITABLE_PARTITION_PATH,
+                    "Please specify the appropriate partition path to property read_partitions");
+            }
+            commaSeparatedPaths = partitionPaths.stream().collect(Collectors.joining(","));
+        }
+        Configuration configuration = HudiUtil.getConfiguration(hadoopConf);
         JobConf jobConf = HudiUtil.toJobConf(configuration);
-        FileInputFormat.setInputPaths(jobConf, path);
+        FileInputFormat.setInputPaths(jobConf, commaSeparatedPaths);
         HoodieParquetInputFormat inputFormat = new HoodieParquetInputFormat();
         inputFormat.setConf(jobConf);
-        for (InputSplit split : inputFormat.getSplits(jobConf, 0)) {
+        InputSplit[] inputSplits = inputFormat.getSplits(jobConf, 0);
+        log.info("read hudi input splits: {}",
+            Arrays.stream(inputSplits).map(InputSplit::toString).collect(Collectors.joining(",")));
+        for (InputSplit split : inputSplits) {
             hudiSourceSplits.add(new HudiSourceSplit(split.toString(), split));
         }
         return hudiSourceSplits;
+    }
+
+    private Option<String[]> getPartitionFields(FileSystem fs, String basePath) {
+        basePath = basePath.endsWith("/") ? basePath : basePath + "/";
+        HoodieTableConfig hoodieTableConfig = new HoodieTableConfig(fs, basePath + HUDI_METADATA_FOLDER, null);
+        return hoodieTableConfig.getPartitionFields();
+    }
+
+    private Pattern getPartitionPattern(String[] partitions) {
+        String partitionExpression = Arrays.stream(partitions).map(pt -> String.format("%s=(.*?)", pt)).collect(Collectors.joining("\\/"));
+        return Pattern.compile(".*\\/" + partitionExpression);
+    }
+
+    private List<String> getPartitionPaths(FileSystem fs, String path, Pattern partitionPattern) throws IOException {
+        List<String> paths = new ArrayList<>();
+        FileStatus[] fileStatuses = fs.listStatus(new Path(path));
+        for (FileStatus fileStatus: fileStatuses) {
+            if (fileStatus.isDirectory()) {
+                String currentPath = fileStatus.getPath().toString();
+                if (partitionPattern.matcher(currentPath).matches()) {
+                    if (!readPartitions.isEmpty()) {
+                        for (String readPartition : readPartitions) {
+                            if (currentPath.contains(readPartition)) {
+                                paths.add(currentPath);
+                                break;
+                            }
+                        }
+                    } else {
+                        paths.add(currentPath);
+                    }
+                } else {
+                    paths.addAll(getPartitionPaths(fs, fileStatus.getPath().toString(), partitionPattern));
+                }
+            }
+        }
+        return paths;
     }
 
     @Override
