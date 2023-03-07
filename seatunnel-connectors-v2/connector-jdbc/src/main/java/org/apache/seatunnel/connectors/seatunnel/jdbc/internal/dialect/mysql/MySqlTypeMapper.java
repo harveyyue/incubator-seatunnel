@@ -91,15 +91,16 @@ public class MySqlTypeMapper implements JdbcDialectTypeMapper {
     @Override
     public SeaTunnelDataType<?> mapping(ResultSetMetaData metadata, int colIndex) throws SQLException {
         String mysqlType = metadata.getColumnTypeName(colIndex).toUpperCase();
-        String columnName = metadata.getColumnName(colIndex);
         int precision = metadata.getPrecision(colIndex);
         int scale = metadata.getScale(colIndex);
         switch (mysqlType) {
             case MYSQL_BIT:
                 return BasicType.BOOLEAN_TYPE;
             case MYSQL_TINYINT:
+                return BasicType.BYTE_TYPE;
             case MYSQL_TINYINT_UNSIGNED:
             case MYSQL_SMALLINT:
+                return BasicType.SHORT_TYPE;
             case MYSQL_SMALLINT_UNSIGNED:
             case MYSQL_MEDIUMINT:
             case MYSQL_MEDIUMINT_UNSIGNED:
