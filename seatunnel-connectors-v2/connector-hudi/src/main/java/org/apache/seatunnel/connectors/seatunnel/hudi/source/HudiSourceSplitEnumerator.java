@@ -112,7 +112,7 @@ public class HudiSourceSplitEnumerator implements SourceSplitEnumerator<HudiSour
         HoodieParquetInputFormat inputFormat = new HoodieParquetInputFormat();
         inputFormat.setConf(jobConf);
         InputSplit[] inputSplits = inputFormat.getSplits(jobConf, 0);
-        log.info("read hudi input splits: {}",
+        log.info("Reading hudi input splits: {}",
             Arrays.stream(inputSplits).map(InputSplit::toString).collect(Collectors.joining(",")));
         for (InputSplit split : inputSplits) {
             hudiSourceSplits.add(new HudiSourceSplit(split.toString(), split));

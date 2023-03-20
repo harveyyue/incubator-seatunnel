@@ -136,7 +136,9 @@ public abstract class AbstractReadStrategy implements ReadStrategy {
         Path listFiles = new Path(path);
         FileStatus[] stats = hdfs.listStatus(listFiles);
         for (FileStatus fileStatus : stats) {
-            if (fileStatus.isDirectory()) {
+            // skip following hive temporary dir
+            // hdfs://cluster/hive_warehouse/xxx.db/xxx/.hive-staging_hive_2023-03-17_10-02-54_995_8194571524703271197-1/-ext-10000/_temporary/0/_temporary/attempt_202303171002562363932851554245863_0000_m_000000_0
+            if (fileStatus.isDirectory() && !fileStatus.getPath().toString().contains("/-ext-10000")) {
                 fileNames.addAll(getFileNamesByPath(hadoopConf, fileStatus.getPath().toString()));
                 continue;
             }
