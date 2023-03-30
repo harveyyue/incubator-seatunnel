@@ -95,7 +95,7 @@ public class HudiSourceSplitEnumerator implements SourceSplitEnumerator<HudiSour
     private Set<HudiSourceSplit> getHudiSplit() throws IOException {
         Set<HudiSourceSplit> hudiSourceSplits = new HashSet<>();
         String commaSeparatedPaths = tablePath;
-        FileSystem fs =  FSUtils.getFs(tablePath, HudiUtil.getConfiguration(hadoopConf));
+        FileSystem fs = FSUtils.getFs(tablePath, HudiUtil.getConfiguration(hadoopConf));
         Option<String[]> partitionFields = getPartitionFields(fs, tablePath);
         if (partitionFields.isPresent() && partitionFields.get().length > 0) {
             Pattern partitionPattern = getPartitionPattern(partitionFields.get());

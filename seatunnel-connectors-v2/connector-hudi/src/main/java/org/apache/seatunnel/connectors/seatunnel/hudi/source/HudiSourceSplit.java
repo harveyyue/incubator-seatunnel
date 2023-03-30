@@ -19,6 +19,8 @@ package org.apache.seatunnel.connectors.seatunnel.hudi.source;
 
 import org.apache.seatunnel.api.source.SourceSplit;
 
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputSplit;
 
 public class HudiSourceSplit implements SourceSplit {
@@ -41,5 +43,9 @@ public class HudiSourceSplit implements SourceSplit {
 
     public InputSplit getInputSplit() {
         return this.inputSplit;
+    }
+
+    public Path getPath() {
+        return ((FileSplit) inputSplit).getPath();
     }
 }

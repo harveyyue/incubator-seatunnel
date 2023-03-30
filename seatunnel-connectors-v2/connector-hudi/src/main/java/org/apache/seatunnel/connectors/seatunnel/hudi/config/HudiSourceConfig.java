@@ -32,29 +32,4 @@ public class HudiSourceConfig {
                     .stringType()
                     .noDefaultValue()
                     .withDescription("hudi table type. default hudi table type is cow. mor is not support yet");
-
-    public static final Option<String> CONF_FILES =
-            Options.key("conf.files")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("hudi conf files ");
-
-    public static final Option<Boolean> USE_KERBEROS =
-            Options.key("use.kerberos")
-                    .booleanType()
-                    .defaultValue(false)
-                    .withDescription("hudi use.kerberos");
-
-    public static final Option<String> KERBEROS_PRINCIPAL =
-            Options.key("kerberos.principal")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("hudi kerberos.principal");
-
-    public static final Option<String> KERBEROS_PRINCIPAL_FILE =
-            Options.key("kerberos.principal.file")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("hudi kerberos.principal.file ");
-
 }

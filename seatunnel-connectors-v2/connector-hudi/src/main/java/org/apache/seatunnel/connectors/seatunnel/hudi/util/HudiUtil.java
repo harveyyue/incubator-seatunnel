@@ -32,12 +32,14 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.schema.MessageType;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class HudiUtil {
 
@@ -54,7 +56,9 @@ public class HudiUtil {
         Configuration configuration = getConfiguration(hadoopConf);
         FileSystem hdfs = FileSystem.get(configuration);
         Path listFiles = new Path(path);
-        FileStatus[] stats = hdfs.listStatus(listFiles);
+        List<FileStatus> stats = Arrays.stream(hdfs.listStatus(listFiles))
+                .sorted((fs1, fs2) -> Long.compare(fs2.getModificationTime(), fs1.getModificationTime()))
+                .collect(Collectors.toList());
         for (FileStatus fileStatus : stats) {
             if (fileStatus.isDirectory()) {
                 String filePath = getParquetFileByPath(hadoopConf, fileStatus.getPath().toString());
@@ -100,15 +104,4 @@ public class HudiUtil {
         }
         return new JobConf(conf);
     }
-
-    public static void initKerberosAuthentication(Configuration conf, String principal, String principalFile) throws HudiConnectorException {
-        try {
-            UserGroupInformation.setConfiguration(conf);
-            UserGroupInformation.loginUserFromKeytab(principal, principalFile);
-        } catch (IOException e) {
-            throw new HudiConnectorException(CommonErrorCode.KERBEROS_AUTHORIZED_FAILED,
-                "Kerberos Authorized Fail!", e);
-        }
-    }
-
 }
