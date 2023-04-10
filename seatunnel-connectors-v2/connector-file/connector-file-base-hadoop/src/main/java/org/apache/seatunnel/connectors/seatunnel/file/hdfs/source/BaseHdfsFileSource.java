@@ -38,7 +38,6 @@ import org.apache.seatunnel.shade.com.typesafe.config.Config;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class BaseHdfsFileSource extends BaseFileSource {
@@ -67,7 +66,7 @@ public abstract class BaseHdfsFileSource extends BaseFileSource {
         }
         try {
             filePaths = readStrategy.getFileNamesByPath(hadoopConf, path);
-            log.info("Reading hdfs files: {}", filePaths.stream().collect(Collectors.joining(",")));
+            log.info("Reading hdfs files: {}", String.join(",", filePaths));
         } catch (IOException e) {
             String errorMsg = String.format("Get file list from this path [%s] failed", path);
             throw new FileConnectorException(FileConnectorErrorCode.FILE_LIST_GET_FAILED, errorMsg, e);

@@ -22,10 +22,13 @@ import org.apache.seatunnel.common.config.CheckConfigUtil.checkAllExists
 import org.apache.seatunnel.common.config.CheckResult
 import org.apache.seatunnel.spark.{BaseSparkTransform, SparkEnvironment}
 import org.apache.spark.sql.{Dataset, Row}
+import org.slf4j.{Logger, LoggerFactory}
 
 class Sql extends BaseSparkTransform {
+  val log: Logger = LoggerFactory.getLogger(getClass)
 
   override def process(data: Dataset[Row], env: SparkEnvironment): Dataset[Row] = {
+    log.info("Source dataset schema is {}", data.schema)
     env.getSparkSession.sql(AviatorHelper.parseExpression(config.getString("sql")))
   }
 

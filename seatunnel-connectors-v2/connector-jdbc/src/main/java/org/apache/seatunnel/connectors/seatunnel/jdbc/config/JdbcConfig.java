@@ -19,12 +19,14 @@ package org.apache.seatunnel.connectors.seatunnel.jdbc.config;
 
 import org.apache.seatunnel.api.configuration.Option;
 import org.apache.seatunnel.api.configuration.Options;
+import org.apache.seatunnel.common.aviator.AviatorHelper;
 import org.apache.seatunnel.connectors.seatunnel.jdbc.internal.options.JdbcConnectionOptions;
 
 import org.apache.seatunnel.shade.com.typesafe.config.Config;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class JdbcConfig implements Serializable {
     private static final int DEFAULT_CONNECTION_CHECK_TIMEOUT_SEC = 30;
@@ -114,7 +116,8 @@ public class JdbcConfig implements Serializable {
             jdbcOptions.batchIntervalMs = config.getInt(JdbcConfig.BATCH_INTERVAL_MS.key());
         }
         if (config.hasPath(JdbcConfig.PREPARE_SQL.key())) {
-            jdbcOptions.prepareSql = config.getStringList(JdbcConfig.PREPARE_SQL.key());
+            jdbcOptions.prepareSql = config.getStringList(JdbcConfig.PREPARE_SQL.key()).stream()
+                    .map(AviatorHelper::parseExpression).collect(Collectors.toList());
         }
         if (config.hasPath(JdbcConfig.POST_SQL.key())) {
             jdbcOptions.postSql = config.getStringList(JdbcConfig.POST_SQL.key());
