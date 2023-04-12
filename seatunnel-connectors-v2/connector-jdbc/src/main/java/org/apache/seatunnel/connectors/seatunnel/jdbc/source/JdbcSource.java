@@ -94,6 +94,7 @@ public class JdbcSource implements SeaTunnelSource<SeaTunnelRow, JdbcSourceSplit
             jdbcSourceOptions.getFetchSize(),
             jdbcSourceOptions.getJdbcConnectionOptions().isAutoCommit()
         );
+        LOG.info("Jdbc source query: {}", query);
     }
 
     @Override

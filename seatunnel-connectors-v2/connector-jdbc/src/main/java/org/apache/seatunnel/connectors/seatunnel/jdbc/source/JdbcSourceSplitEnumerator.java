@@ -127,15 +127,15 @@ public class JdbcSourceSplitEnumerator implements SourceSplitEnumerator<JdbcSour
     private void addPendingSplit(Collection<JdbcSourceSplit> splits) {
         int readerCount = enumeratorContext.currentParallelism();
         for (JdbcSourceSplit split : splits) {
-            int ownerReader = getSplitOwner(split.splitId(), readerCount);
+            int ownerReader = getSplitOwner(split, readerCount);
             LOG.info("Assigning {} to {} reader.", split, ownerReader);
             pendingSplits.computeIfAbsent(ownerReader, r -> new ArrayList<>())
                     .add(split);
         }
     }
 
-    private static int getSplitOwner(String tp, int numReaders) {
-        return (tp.hashCode() & Integer.MAX_VALUE) % numReaders;
+    private static int getSplitOwner(JdbcSourceSplit split, int numReaders) {
+        return (split.getSplitId() & Integer.MAX_VALUE) % numReaders;
     }
 
     private void assignSplit(Collection<Integer> readers) {
